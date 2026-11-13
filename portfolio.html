@@ -1,0 +1,760 @@
+<title>Test Bench to Robots</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: an engineer's workbench. An instrument-style header strip, then bench panels (scope, bridge, builds, stack, off-bench) laid on an ESD-mat ground. */
+:root {
+  --mat: #D9E0DE;
+  --panel: #F6F8F7;
+  --ink: #15201F;
+  --muted: #566563;
+  --line: #B6C1BF;
+  --accent: #A85F00;
+  --trace: #0D7880;
+  --ok: #2B7F51;
+  --planned: #8A9795;
+  --ph-bg: rgba(168, 95, 0, 0.10);
+  --hatch: rgba(21, 32, 31, 0.07);
+  --display: "Barlow Condensed", "Arial Narrow", "Roboto Condensed", sans-serif;
+  --body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --mat: #111716; --panel: #1A2221; --ink: #E2E9E7; --muted: #94A4A1; --line: #2F3B39;
+    --accent: #F0A440; --trace: #52C6CE; --ok: #62C98C; --planned: #66746F;
+    --ph-bg: rgba(240, 164, 64, 0.14); --hatch: rgba(226, 233, 231, 0.06);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --mat: #111716; --panel: #1A2221; --ink: #E2E9E7; --muted: #94A4A1; --line: #2F3B39;
+  --accent: #F0A440; --trace: #52C6CE; --ok: #62C98C; --planned: #66746F;
+  --ph-bg: rgba(240, 164, 64, 0.14); --hatch: rgba(226, 233, 231, 0.06);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--mat);
+  color: var(--ink);
+  font-family: var(--body);
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+body::before {
+  content: ""; position: fixed; inset: 0 0 auto;
+  height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--panel);
+}
+a { color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 2px; }
+
+.wrap {
+  max-width: 1120px; margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+
+/* Placeholder marker: anything to replace with real info */
+.ph {
+  background: var(--ph-bg);
+  border-bottom: 1.5px dashed var(--accent);
+  padding: 0 0.2em;
+  border-radius: 2px;
+}
+
+/* Header strip */
+.strip {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5;
+  background: var(--panel);
+  border-bottom: 1px solid var(--line);
+}
+.strip .wrap {
+  display: flex; align-items: center; gap: 20px;
+  padding-block: 10px;
+}
+.brand {
+  font-family: var(--display); font-weight: 700; font-size: 1.25rem;
+  letter-spacing: 0.02em; text-transform: uppercase; white-space: nowrap;
+  text-decoration: none;
+}
+.nav {
+  display: flex; gap: 4px; overflow-x: auto; min-width: 0; margin-left: auto;
+  scrollbar-width: none;
+}
+.nav::-webkit-scrollbar { display: none; }
+.nav a {
+  font-family: var(--mono); font-size: 0.75rem; letter-spacing: 0.06em;
+  text-transform: uppercase; text-decoration: none; color: var(--muted);
+  padding: 6px 10px; border-radius: 3px; white-space: nowrap;
+}
+.nav a:hover { color: var(--ink); background: var(--mat); }
+
+/* Section scaffolding */
+section { padding-block: 56px 8px; scroll-margin-top: 64px; }
+.label {
+  font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--muted);
+  display: flex; align-items: center; gap: 10px;
+}
+.label::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+h1, h2, h3 { font-family: var(--display); text-wrap: balance; margin: 0; line-height: 1.02; }
+h2 { font-size: clamp(2rem, 4.4vw, 2.9rem); font-weight: 600; margin-top: 14px; letter-spacing: -0.005em; }
+h3 { font-size: 1.45rem; font-weight: 600; }
+.lede { max-width: 62ch; color: var(--muted); margin: 12px 0 0; }
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+
+/* Hero */
+.hero { padding-block: 40px 8px; }
+.hero-grid {
+  display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
+  gap: 32px; align-items: start;
+}
+.status {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-family: var(--mono); font-size: 0.75rem; letter-spacing: 0.04em;
+  padding: 6px 12px 6px 10px; border: 1px solid var(--line); border-radius: 999px;
+  background: var(--panel);
+}
+.led { width: 8px; height: 8px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ok) 22%, transparent); flex: none; }
+.led.pending { background: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent); }
+.led.planned { background: var(--planned); box-shadow: none; }
+h1 {
+  font-size: clamp(2.8rem, 7vw, 5rem); font-weight: 700; text-transform: uppercase;
+  letter-spacing: -0.01em; margin-top: 20px;
+}
+h1 .now { color: var(--accent); }
+.hero p.intro { max-width: 52ch; margin: 18px 0 0; font-size: 1.06rem; }
+.facts {
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px;
+  margin-top: 26px; background: var(--line); border: 1px solid var(--line); border-radius: 6px; overflow: hidden;
+}
+.facts div { background: var(--panel); padding: 12px 14px; }
+.facts dt { font-family: var(--mono); font-size: 0.68rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+.facts dd { margin: 2px 0 0; font-weight: 500; }
+
+/* Scope */
+.scope { padding: 14px; display: flex; flex-direction: column; gap: 12px; }
+.scope-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.scope-title { font-family: var(--display); font-size: 1.15rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; }
+.scope-tag { font-family: var(--mono); font-size: 0.7rem; color: var(--muted); }
+.screen {
+  display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 0;
+  border: 1px solid var(--line); border-radius: 4px; overflow: hidden; background: var(--mat);
+}
+.screen canvas { display: block; width: 100%; height: 190px; }
+#bot { border-right: 1px solid var(--line); }
+.readouts {
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px;
+  font-family: var(--mono); font-size: 0.75rem; font-variant-numeric: tabular-nums;
+}
+.readouts div { border: 1px solid var(--line); border-radius: 4px; padding: 6px 8px; }
+.readouts span { display: block; color: var(--muted); font-size: 0.65rem; letter-spacing: 0.08em; text-transform: uppercase; }
+.readouts b { font-weight: 600; font-size: 0.95rem; }
+#state.fell { color: var(--accent); }
+.controls { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; gap: 12px; align-items: end; }
+.knob label { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 0.7rem; color: var(--muted); letter-spacing: 0.06em; text-transform: uppercase; }
+.knob output { color: var(--ink); font-variant-numeric: tabular-nums; }
+input[type=range] { width: 100%; accent-color: var(--trace); margin: 6px 0 0; }
+.btn {
+  font-family: var(--mono); font-size: 0.78rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase;
+  background: var(--ink); color: var(--panel); border: 0; border-radius: 4px;
+  padding: 10px 14px; cursor: pointer; white-space: nowrap;
+}
+.btn:hover { background: var(--accent); color: var(--panel); }
+.btn.ghost { background: transparent; color: var(--ink); border: 1px solid var(--line); }
+.btn.ghost:hover { border-color: var(--ink); background: transparent; color: var(--ink); }
+.scope-note { font-size: 0.8rem; color: var(--muted); margin: 0; }
+
+/* Bridge */
+.bridge { margin-top: 28px; overflow: hidden; }
+.bridge-head, .bridge-row {
+  display: grid; grid-template-columns: minmax(0, 1fr) 40px minmax(0, 1fr);
+  gap: 0; align-items: stretch;
+}
+.bridge-head div {
+  font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--muted); padding: 12px 20px; border-bottom: 1px solid var(--line);
+}
+.bridge-row + .bridge-row { border-top: 1px solid var(--line); }
+.bridge-row > div { padding: 18px 20px; min-width: 0; }
+.bridge-row .arrow {
+  padding: 0; display: flex; align-items: center; justify-content: center;
+  color: var(--accent); font-family: var(--mono); font-size: 1.1rem;
+}
+.bridge-row strong { display: block; font-weight: 600; }
+.bridge-row p { margin: 4px 0 0; color: var(--muted); font-size: 0.94rem; }
+.bridge-row:hover { background: color-mix(in srgb, var(--trace) 6%, transparent); }
+.gap-note {
+  margin-top: 16px; display: flex; gap: 12px; align-items: flex-start;
+  font-size: 0.94rem; max-width: 76ch;
+}
+.gap-note .tagline { font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); white-space: nowrap; padding-top: 3px; }
+
+/* Builds */
+.builds { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 16px; margin-top: 28px; }
+.build { padding: 22px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.build.lead { grid-column: span 6; }
+.build.half { grid-column: span 3; }
+.build.third { grid-column: span 2; }
+.build-meta { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.build-meta .state { display: inline-flex; align-items: center; gap: 7px; color: var(--ink); }
+.build p { margin: 0; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; padding: 0; margin: 0; list-style: none; }
+.chips li { font-family: var(--mono); font-size: 0.7rem; padding: 3px 8px; border: 1px solid var(--line); border-radius: 3px; color: var(--muted); }
+.lead-grid { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 28px; }
+.spec { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; }
+.spec li { display: grid; grid-template-columns: 9.5em minmax(0, 1fr); gap: 12px; font-size: 0.93rem; }
+.spec li span:first-child { font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); padding-top: 3px; }
+.dod { border: 1px solid var(--line); border-radius: 4px; overflow: hidden; }
+.dod-row { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 14px; padding: 9px 12px; font-size: 0.9rem; align-items: center; }
+.dod-row + .dod-row { border-top: 1px solid var(--line); }
+.dod-row.h { font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); background: var(--mat); }
+.dod-row .num { font-family: var(--mono); font-size: 0.8rem; font-variant-numeric: tabular-nums; text-align: right; min-width: 6.5em; }
+.dod-row .num.pending { color: var(--accent); }
+.roadmap { display: flex; gap: 0; margin: 0; padding: 0; list-style: none; border: 1px solid var(--line); border-radius: 4px; overflow-x: auto; }
+.roadmap li { flex: 1 0 140px; padding: 10px 12px; font-size: 0.84rem; }
+.roadmap li + li { border-left: 1px solid var(--line); }
+.roadmap b { display: block; font-family: var(--mono); font-size: 0.72rem; color: var(--trace); }
+.roadmap li.current { background: color-mix(in srgb, var(--accent) 10%, transparent); }
+.roadmap li.current b { color: var(--accent); }
+.media-slot {
+  border: 1px dashed var(--line); border-radius: 4px; min-height: 120px;
+  display: flex; align-items: center; justify-content: center; text-align: center; padding: 14px;
+  font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted);
+  background: repeating-linear-gradient(135deg, var(--hatch) 0 8px, transparent 8px 16px);
+}
+
+/* Stack */
+.stack { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-top: 28px; }
+.tier { padding: 20px; min-width: 0; }
+.tier h3 { display: flex; align-items: center; gap: 10px; font-size: 1.25rem; }
+.tier p.sub { margin: 4px 0 14px; font-size: 0.86rem; color: var(--muted); }
+.tier ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 7px; }
+.tier li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; font-size: 0.93rem; border-bottom: 1px dotted var(--line); padding-bottom: 6px; }
+.tier li small { font-family: var(--mono); font-size: 0.68rem; color: var(--muted); white-space: nowrap; padding-top: 3px; }
+.courses { margin-top: 16px; padding: 18px 20px; display: grid; grid-template-columns: 12em minmax(0, 1fr); gap: 16px; align-items: start; }
+.courses .k { font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); padding-top: 4px; }
+
+/* Off the bench */
+.off { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-top: 28px; }
+.hobby { overflow: hidden; display: flex; flex-direction: column; min-width: 0; }
+.hobby .media-slot { border: 0; border-bottom: 1px solid var(--line); border-radius: 0; aspect-ratio: 4 / 3; max-width: 100%; min-height: 0; }
+.hobby .body { padding: 18px 20px 20px; display: grid; gap: 8px; }
+.hobby .stat { font-family: var(--mono); font-size: 0.72rem; color: var(--muted); letter-spacing: 0.04em; }
+.hobby p { margin: 0; font-size: 0.95rem; }
+
+/* Contact */
+.contact { margin-top: 28px; padding: 28px; display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 32px; align-items: start; }
+.contact h3 { font-size: clamp(1.8rem, 3.6vw, 2.4rem); text-transform: uppercase; font-weight: 700; }
+.contact p { margin: 12px 0 0; color: var(--muted); max-width: 48ch; }
+.links { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.links li { display: grid; grid-template-columns: 6.5em minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 10px 12px; border: 1px solid var(--line); border-radius: 4px; }
+.links .k { font-family: var(--mono); font-size: 0.68rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+.links .v { font-family: var(--mono); font-size: 0.85rem; overflow-wrap: anywhere; user-select: all; }
+.copy-ok { font-family: var(--mono); font-size: 0.7rem; color: var(--ok); }
+
+footer { padding-block: 48px 40px; }
+footer .wrap { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; font-family: var(--mono); font-size: 0.72rem; color: var(--muted); letter-spacing: 0.04em; border-top: 1px solid var(--line); padding-top: 18px; }
+
+/* Responsive */
+@media (max-width: 900px) {
+  .hero-grid, .lead-grid, .contact { grid-template-columns: minmax(0, 1fr); }
+  .build.half, .build.third { grid-column: span 6; }
+  .stack, .off { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 640px) {
+  .brand { font-size: 1.05rem; }
+  .bridge-head { display: none; }
+  .bridge-row { grid-template-columns: minmax(0, 1fr); }
+  .bridge-row .arrow { justify-content: flex-start; padding: 0 20px; transform: rotate(90deg); width: 24px; height: 16px; margin-left: 16px; }
+  .bridge-row > div:first-child { padding-bottom: 6px; }
+  .bridge-row > div:last-child { padding-top: 6px; }
+  .bridge-row > div:first-child strong::before { content: "Then · "; font-family: var(--mono); font-size: 0.68rem; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; font-weight: 400; }
+  .bridge-row > div:last-child strong::before { content: "Now · "; font-family: var(--mono); font-size: 0.68rem; color: var(--accent); letter-spacing: 0.08em; text-transform: uppercase; font-weight: 400; }
+  .controls { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .controls .btns { grid-column: span 2; display: flex; gap: 8px; }
+  .controls .btns .btn { flex: 1; }
+  .screen { grid-template-columns: 72px minmax(0, 1fr); }
+  .spec li { grid-template-columns: minmax(0, 1fr); gap: 0; }
+  .courses { grid-template-columns: minmax(0, 1fr); gap: 6px; }
+  .links li { grid-template-columns: minmax(0, 1fr) auto; }
+  .links .k { grid-column: span 2; }
+  .gap-note { flex-direction: column; gap: 4px; }
+  .contact { padding: 20px; }
+  .build { padding: 18px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+}
+html { scroll-behavior: smooth; }
+</style>
+
+<header class="strip">
+  <div class="wrap">
+    <a class="brand" href="#bench"><span class="ph">Your Name</span></a>
+    <nav class="nav" aria-label="Sections">
+      <a href="#bridge">Bridge</a>
+      <a href="#builds">Builds</a>
+      <a href="#stack">Stack</a>
+      <a href="#off">Off the bench</a>
+      <a href="#contact">Contact</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <section class="hero" id="bench">
+    <div class="wrap hero-grid">
+      <div>
+        <span class="status"><span class="led"></span>Open to embedded and robotics roles · Hoboken, NJ</span>
+        <h1>Five years testing vehicle electronics. <span class="now">Now building robots.</span></h1>
+        <p class="intro">I'm an electrical engineer who spent five years validating automotive electronics: tire pressure sensors, body control modules, and the CAN networks between them. Now I'm building embedded robots and studying ML at Georgia Tech.</p>
+        <dl class="facts">
+          <div><dt>Degree</dt><dd>B.S. Electrical Engineering</dd></div>
+          <div><dt>Grad school</dt><dd>Georgia Tech MSCS, ML/AI · May 2027</dd></div>
+          <div><dt>Industry</dt><dd>~5 yrs automotive test and validation</dd></div>
+          <div><dt>Looking for</dt><dd>Embedded, robotics, cyber-physical systems</dd></div>
+        </dl>
+      </div>
+
+      <div class="panel scope" aria-label="Balance controller simulation">
+        <div class="scope-head">
+          <span class="scope-title">Balance loop · pitch angle</span>
+          <span class="scope-tag">PID · 200 Hz · simulated</span>
+        </div>
+        <div class="screen">
+          <canvas id="bot" aria-hidden="true"></canvas>
+          <canvas id="trace" role="img" aria-label="Live plot of the simulated robot's pitch angle over the last four seconds"></canvas>
+        </div>
+        <div class="readouts" aria-live="off">
+          <div><span>Pitch</span><b id="r-pitch">0.0°</b></div>
+          <div><span>Motor cmd</span><b id="r-cmd">0</b></div>
+          <div><span>State</span><b id="state">Balancing</b></div>
+        </div>
+        <div class="controls">
+          <div class="knob">
+            <label for="kp">Kp <output id="kp-out" for="kp">160</output></label>
+            <input type="range" id="kp" min="40" max="320" step="5" value="160">
+          </div>
+          <div class="knob">
+            <label for="kd">Kd <output id="kd-out" for="kd">12</output></label>
+            <input type="range" id="kd" min="0" max="30" step="0.5" value="12">
+          </div>
+          <div class="btns">
+            <button class="btn" id="kick" type="button">Push it</button>
+            <button class="btn ghost" id="reset" type="button">Reset</button>
+          </div>
+        </div>
+        <p class="scope-note">Push the robot or drop Kp below gravity's pull and watch it fall. This is a browser simulation of the controller in my self-balancing robot. Real telemetry from the hardware replaces it once v1 ships.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="bridge">
+    <div class="wrap">
+      <div class="label">The bridge</div>
+      <h2>What carries over from the test bench</h2>
+      <p class="lede">Automotive validation is close to robotics. Both put sensors, actuators, and software on one network, and the job is proving the whole system behaves when things go wrong.</p>
+
+      <div class="panel bridge">
+        <div class="bridge-head"><div>On the test bench</div><div></div><div>On the robot</div></div>
+        <div class="bridge-row">
+          <div><strong>ECU testing over CAN</strong><p>Hardware and system testing of body control modules, reading and driving the bus with CANalyzer and CANoe.</p></div>
+          <div class="arrow" aria-hidden="true">→</div>
+          <div><strong>Embedded communication</strong><p>Robots are networks of controllers too: motor drivers, IMUs, and compute boards passing messages under timing limits.</p></div>
+        </div>
+        <div class="bridge-row">
+          <div><strong>Test automation frameworks</strong><p>Designed and built automated test setups in vTESTstudio and NI TestStand, with plenty of Python glue.</p></div>
+          <div class="arrow" aria-hidden="true">→</div>
+          <div><strong>Hardware-in-the-loop validation</strong><p>The same habit applied to my own builds: a separate fault-injection rig and logged disturbance runs instead of "it looked fine."</p></div>
+        </div>
+        <div class="bridge-row">
+          <div><strong>Sensor validation</strong><p>System and in-vehicle testing of tire pressure monitoring sensors, where readings have to hold up on real roads.</p></div>
+          <div class="arrow" aria-hidden="true">→</div>
+          <div><strong>Perception and state estimation</strong><p>Knowing how sensors fail in the field is the starting point for filtering, fusion, and localization.</p></div>
+        </div>
+        <div class="bridge-row">
+          <div><strong>Radar position visualizer</strong><p>An Android app that plotted radar positions streamed over MQTT from a Raspberry Pi.</p></div>
+          <div class="arrow" aria-hidden="true">→</div>
+          <div><strong>Telemetry pipelines</strong><p>Getting data off a moving system and in front of a person quickly, now with Prometheus and Grafana on a Pi 5.</p></div>
+        </div>
+      </div>
+
+      <p class="gap-note"><span class="tagline">Where I'm growing</span><span>My professional experience is in validation, not production design. I'm closing that gap with C/C++, RTOS firmware, and real hardware, and every build below is part of that.</span></p>
+    </div>
+  </section>
+
+  <section id="builds">
+    <div class="wrap">
+      <div class="label">Builds</div>
+      <h2>Things I've built and am building</h2>
+
+      <div class="builds">
+        <article class="panel build lead">
+          <div class="build-meta"><span class="state"><span class="led pending"></span>In progress · v1</span><span>STM32 · FreeRTOS · C</span></div>
+          <h3>Self-balancing robot</h3>
+          <div class="lead-grid">
+            <div style="display:grid;gap:16px;min-width:0">
+              <p>A two-wheeled robot that balances itself with a hard real-time control loop. I'm building it the way I'd validate a production ECU: measured timing, logged disturbances, and a fault-injection rig that tries to break it.</p>
+              <ul class="spec">
+                <li><span>Controller</span><span>STM32F407 Discovery running FreeRTOS</span></li>
+                <li><span>Control loop</span><span>IMU read and attitude filter at 200 to 500 Hz, balance PID at 200 Hz</span></li>
+                <li><span>Estimation</span><span>Complementary filter first, then a Kalman filter</span></li>
+                <li><span>Telemetry</span><span>Binary frames over UART to a Raspberry Pi 5, into Prometheus and Grafana</span></li>
+                <li><span>Fault injection</span><span>Arduino Mega as an independent rig</span></li>
+                <li><span>Chassis</span><span>2WD balancing chassis with 520 encoder motors</span></li>
+              </ul>
+            </div>
+            <div style="display:grid;gap:14px;min-width:0">
+              <div class="dod" role="table" aria-label="Version 1 targets">
+                <div class="dod-row h" role="row"><span role="columnheader">v1 target</span><span role="columnheader">Goal</span><span role="columnheader">Measured</span></div>
+                <div class="dod-row" role="row"><span role="cell">Balances unassisted</span><span class="num" role="cell">&gt; 60 s</span><span class="num pending" role="cell">pending</span></div>
+                <div class="dod-row" role="row"><span role="cell">Control loop jitter</span><span class="num" role="cell">P99 + max</span><span class="num pending" role="cell">pending</span></div>
+                <div class="dod-row" role="row"><span role="cell">Grafana dashboard</span><span class="num" role="cell">live</span><span class="num pending" role="cell">pending</span></div>
+                <div class="dod-row" role="row"><span role="cell">Disturbance runs logged</span><span class="num" role="cell">sequence</span><span class="num pending" role="cell">pending</span></div>
+              </div>
+              <div class="media-slot">Video slot · robot balancing + push test</div>
+            </div>
+          </div>
+          <ol class="roadmap" aria-label="Roadmap">
+            <li class="current"><b>v1 · now</b>Balance, timing, telemetry</li>
+            <li><b>v1.5</b>Encoders for position hold</li>
+            <li><b>v2</b>Pan-tilt camera, object tracking</li>
+            <li><b>v3</b>k3s, Terraform, CI</li>
+            <li><b>v4</b>RL, quantized inference, ROS 2</li>
+          </ol>
+          <div class="build-meta"><span>Repo</span><span class="ph">github.com/your-handle/balance-bot</span></div>
+        </article>
+
+        <article class="panel build half">
+          <div class="build-meta"><span class="state"><span class="led"></span>Shipped · undergrad capstone</span></div>
+          <h3>Maze-running collector robot</h3>
+          <p>A small tracked vehicle built from scratch. It navigated a maze by following walls with ultrasonic sensors, found a colored object with a camera and OpenCV, picked it up with a magnetic collector, then wall-followed the opposite side back to the start.</p>
+          <ul class="chips"><li>Raspberry Pi</li><li>Python</li><li>OpenCV</li><li>H-bridge motor control</li><li>Ultrasonic sensors</li><li>Custom wiring</li></ul>
+          <div class="media-slot">Photo slot · the tracked robot</div>
+        </article>
+
+        <article class="panel build half">
+          <div class="build-meta"><span class="state"><span class="led"></span>Shipped · at work</span></div>
+          <h3>Radar position visualizer</h3>
+          <p>An Android app that displayed radar positions in real time. A Raspberry Pi ran an MQTT server that streamed the data to the app.</p>
+          <ul class="chips"><li>Android</li><li>MQTT</li><li>Raspberry Pi</li><li>Real-time display</li></ul>
+          <div class="media-slot">Screenshot slot · app view</div>
+        </article>
+
+        <article class="panel build third">
+          <div class="build-meta"><span class="state"><span class="led"></span>Shipped · at work</span></div>
+          <h3>Automotive test automation</h3>
+          <p>Test frameworks for body control modules and tire pressure systems, built in CANoe, vTESTstudio, and NI TestStand, with Python scripting throughout.</p>
+          <ul class="chips"><li>CANoe</li><li>CANalyzer</li><li>vTESTstudio</li><li>NI TestStand</li><li>Python</li></ul>
+        </article>
+
+        <article class="panel build third">
+          <div class="build-meta"><span class="state"><span class="led pending"></span>In progress · Fall 2026</span></div>
+          <h3>Physical AI capstone</h3>
+          <p>Research capstone for a Georgia Tech robotics seminar, using LeRobot and MuJoCo. Topic: <span class="ph">one-line project summary</span>.</p>
+          <ul class="chips"><li>LeRobot</li><li>MuJoCo</li><li>PyTorch</li></ul>
+        </article>
+
+        <article class="panel build third">
+          <div class="build-meta"><span class="state"><span class="led planned"></span>Open slot</span></div>
+          <h3><span class="ph">Next build</span></h3>
+          <p>Room for the next project, a coursework robot, or an open-source contribution. Delete this card if you don't need it.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section id="stack">
+    <div class="wrap">
+      <div class="label">Stack</div>
+      <h2>Tools, sorted by how well I know them</h2>
+      <div class="stack">
+        <div class="panel tier">
+          <h3><span class="led"></span>Daily drivers</h3>
+          <p class="sub">Used professionally for years</p>
+          <ul>
+            <li>Python <small>scripting, automation</small></li>
+            <li>CANoe / CANalyzer <small>CAN analysis</small></li>
+            <li>vTESTstudio <small>test design</small></li>
+            <li>NI TestStand <small>test sequencing</small></li>
+            <li>Test planning and failure analysis <small>~5 yrs</small></li>
+          </ul>
+        </div>
+        <div class="panel tier">
+          <h3><span class="led pending"></span>Working knowledge</h3>
+          <p class="sub">Used in projects and coursework</p>
+          <ul>
+            <li>C <small>OS and systems coursework</small></li>
+            <li>Raspberry Pi and Linux <small>capstone, work</small></li>
+            <li>OpenCV <small>capstone</small></li>
+            <li>PyTorch <small>DL / ML coursework</small></li>
+            <li>MQTT <small>radar app</small></li>
+          </ul>
+        </div>
+        <div class="panel tier">
+          <h3><span class="led planned"></span>Learning now</h3>
+          <p class="sub">Being built through current projects</p>
+          <ul>
+            <li>STM32 and FreeRTOS <small>balancing robot</small></li>
+            <li>C++ <small>in progress</small></li>
+            <li>Kalman filtering <small>balancing robot</small></li>
+            <li>LeRobot and MuJoCo <small>seminar</small></li>
+            <li>ROS 2 <small>next up</small></li>
+          </ul>
+        </div>
+      </div>
+      <div class="panel courses">
+        <span class="k">Georgia Tech coursework</span>
+        <ul class="chips">
+          <li>AI for Robotics</li><li>Deep Learning</li><li>Machine Learning</li><li>Artificial Intelligence</li>
+          <li>Graduate Intro to Operating Systems</li><li>Game AI</li><li>Software Development Process</li><li>ML for Trading</li>
+          <li>Cyber-physical systems (current)</li><li>Physical AI seminar (current)</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section id="off">
+    <div class="wrap">
+      <div class="label">Off the bench</div>
+      <h2>What I do when I'm not soldering</h2>
+      <div class="off">
+        <article class="panel hobby">
+          <div class="media-slot">Photo slot · climbing</div>
+          <div class="body">
+            <h3>Climbing</h3>
+            <span class="stat">Home wall: <span class="ph">gym or crag</span></span>
+            <p>Climbing is problem solving with your whole body: read the route, commit to a sequence, fall, adjust. <span class="ph">Add a favorite climb or current project.</span></p>
+          </div>
+        </article>
+        <article class="panel hobby">
+          <div class="media-slot">Photo slot · skiing</div>
+          <div class="body">
+            <h3>Skiing</h3>
+            <span class="stat">Favorite mountain: <span class="ph">mountain</span></span>
+            <p>Winters go to the mountains. <span class="ph">Add your style, favorite run, or a trip worth bragging about.</span></p>
+          </div>
+        </article>
+        <article class="panel hobby">
+          <div class="media-slot">Photo slot · sword fighting</div>
+          <div class="body">
+            <h3>Sword fighting</h3>
+            <span class="stat">Discipline: <span class="ph">HEMA, fencing, or other</span></span>
+            <p>Timing, distance, and reacting faster than the other person, which is not that different from a control loop. <span class="ph">Add your club or weapon of choice.</span></p>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section id="contact">
+    <div class="wrap">
+      <div class="label">Contact</div>
+      <div class="panel contact">
+        <div>
+          <h3>Building something physical? Let's talk.</h3>
+          <p>I'm looking for embedded, robotics, and cyber-physical systems roles in the New York and northern New Jersey area, and I'm happy to talk shop with anyone working on robots.</p>
+        </div>
+        <ul class="links">
+          <li><span class="k">Email</span><span class="v" id="email-v"><span class="ph">you@email.com</span></span><button class="btn ghost" id="copy-email" type="button">Copy</button></li>
+          <li><span class="k">GitHub</span><span class="v"><span class="ph">github.com/your-handle</span></span><span></span></li>
+          <li><span class="k">LinkedIn</span><span class="v"><span class="ph">linkedin.com/in/your-handle</span></span><span></span></li>
+          <li><span class="k">Resume</span><span class="v"><span class="ph">link to resume PDF</span></span><span></span></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>Built on a workbench in Hoboken, NJ</span>
+    <span>Last updated Oct 2026</span>
+  </div>
+</footer>
+
+<script>
+(function () {
+  // ---------- Balance loop simulation ----------
+  var trace = document.getElementById('trace');
+  var bot = document.getElementById('bot');
+  var tctx = trace.getContext('2d');
+  var bctx = bot.getContext('2d');
+  var kpIn = document.getElementById('kp'), kdIn = document.getElementById('kd');
+  var kpOut = document.getElementById('kp-out'), kdOut = document.getElementById('kd-out');
+  var rPitch = document.getElementById('r-pitch'), rCmd = document.getElementById('r-cmd'), rState = document.getElementById('state');
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  var G_OVER_L = 98;          // gravity / effective length (1/s^2)
+  var DT = 1 / 200;           // 200 Hz control loop
+  var U_MAX = 420;            // actuator saturation
+  var FALL = 0.6;             // rad, about 34 degrees
+  var WINDOW = 800;           // 4 s of samples
+  var th = 0.04, om = 0, fallen = false, fallTimer = 0, cmd = 0;
+  var hist = new Float32Array(WINDOW), head = 0;
+  var kickTimer = 3;
+
+  function kp() { return +kpIn.value; }
+  function kd() { return +kdIn.value; }
+
+  function step() {
+    if (fallen) {
+      fallTimer -= DT;
+      if (fallTimer <= 0) { reset(); }
+    } else {
+      var noise = (Math.random() - 0.5) * 0.0008;
+      var u = kp() * (th + noise) + kd() * om;
+      u = Math.max(-U_MAX, Math.min(U_MAX, u));
+      cmd = u;
+      var acc = G_OVER_L * Math.sin(th) - u;
+      om += acc * DT;
+      th += om * DT;
+      if (Math.abs(th) > FALL) {
+        fallen = true; fallTimer = 1.4;
+        th = Math.sign(th) * FALL; om = 0;
+      }
+    }
+    hist[head] = th; head = (head + 1) % WINDOW;
+  }
+  function reset() { th = 0.03 * (Math.random() < 0.5 ? -1 : 1); om = 0; fallen = false; cmd = 0; }
+  function kick() { if (!fallen) { om += (Math.random() < 0.5 ? -1 : 1) * 2.6; } }
+
+  function sizeCanvas(c) {
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    var r = c.getBoundingClientRect();
+    var w = Math.max(1, Math.round(r.width * dpr)), h = Math.max(1, Math.round(r.height * dpr));
+    if (c.width !== w || c.height !== h) { c.width = w; c.height = h; }
+    return dpr;
+  }
+  function tok(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+
+  function drawTrace() {
+    var dpr = sizeCanvas(trace);
+    var W = trace.width, H = trace.height;
+    var line = tok('--line'), muted = tok('--muted'), tr = tok('--trace'), acc = tok('--accent');
+    tctx.clearRect(0, 0, W, H);
+    var padL = 34 * dpr, padR = 8 * dpr, padT = 10 * dpr, padB = 18 * dpr;
+    var pw = W - padL - padR, ph = H - padT - padB;
+    var yOf = function (v) { return padT + ph / 2 - (v / FALL) * (ph / 2); };
+    // grid
+    tctx.lineWidth = 1 * dpr;
+    tctx.font = (10 * dpr) + 'px "JetBrains Mono", ui-monospace, monospace';
+    tctx.fillStyle = muted; tctx.textAlign = 'right'; tctx.textBaseline = 'middle';
+    [-30, -15, 0, 15, 30].forEach(function (deg) {
+      var y = yOf(deg * Math.PI / 180);
+      tctx.strokeStyle = line; tctx.globalAlpha = deg === 0 ? 1 : 0.6;
+      tctx.setLineDash(deg === 0 ? [] : [3 * dpr, 4 * dpr]);
+      tctx.beginPath(); tctx.moveTo(padL, y); tctx.lineTo(W - padR, y); tctx.stroke();
+      tctx.globalAlpha = 1;
+      tctx.fillText((deg > 0 ? '+' : '') + deg + '°', padL - 6 * dpr, y);
+    });
+    tctx.setLineDash([]);
+    for (var s = 0; s <= 4; s++) {
+      var x = padL + pw * (s / 4);
+      tctx.strokeStyle = line; tctx.globalAlpha = 0.5;
+      tctx.beginPath(); tctx.moveTo(x, padT); tctx.lineTo(x, padT + ph); tctx.stroke();
+      tctx.globalAlpha = 1;
+    }
+    tctx.textAlign = 'center'; tctx.textBaseline = 'top';
+    tctx.fillText('-4 s', padL, H - padB + 4 * dpr);
+    tctx.fillText('now', padL + pw - 10 * dpr, H - padB + 4 * dpr);
+    // trace
+    tctx.strokeStyle = fallen ? acc : tr; tctx.lineWidth = 2 * dpr; tctx.lineJoin = 'round';
+    tctx.beginPath();
+    for (var i = 0; i < WINDOW; i++) {
+      var v = hist[(head + i) % WINDOW];
+      var xx = padL + pw * (i / (WINDOW - 1));
+      var yy = yOf(v);
+      if (i === 0) tctx.moveTo(xx, yy); else tctx.lineTo(xx, yy);
+    }
+    tctx.stroke();
+    // endpoint
+    var last = hist[(head + WINDOW - 1) % WINDOW];
+    tctx.fillStyle = fallen ? acc : tr;
+    tctx.beginPath(); tctx.arc(padL + pw, yOf(last), 3.2 * dpr, 0, Math.PI * 2); tctx.fill();
+  }
+
+  function drawBot() {
+    var dpr = sizeCanvas(bot);
+    var W = bot.width, H = bot.height;
+    var ink = tok('--ink'), panel = tok('--panel'), line = tok('--line'), acc = tok('--accent'), tr = tok('--trace');
+    bctx.clearRect(0, 0, W, H);
+    var groundY = H - 20 * dpr;
+    bctx.strokeStyle = line; bctx.lineWidth = 2 * dpr;
+    bctx.beginPath(); bctx.moveTo(8 * dpr, groundY); bctx.lineTo(W - 8 * dpr, groundY); bctx.stroke();
+    var r = 13 * dpr, cx = W / 2, cy = groundY - r;
+    bctx.save();
+    bctx.translate(cx, cy);
+    bctx.rotate(th);
+    var bw = 26 * dpr, bh = Math.min(118 * dpr, H - 50 * dpr);
+    bctx.fillStyle = panel; bctx.strokeStyle = ink; bctx.lineWidth = 1.6 * dpr;
+    bctx.beginPath(); bctx.rect(-bw / 2, -bh, bw, bh); bctx.fill(); bctx.stroke();
+    // board and IMU marks
+    bctx.fillStyle = tr; bctx.fillRect(-bw / 2 + 5 * dpr, -bh * 0.55, bw - 10 * dpr, 6 * dpr);
+    bctx.fillStyle = fallen ? acc : tr; bctx.beginPath(); bctx.arc(0, -bh + 10 * dpr, 3 * dpr, 0, Math.PI * 2); bctx.fill();
+    bctx.restore();
+    bctx.fillStyle = ink;
+    bctx.beginPath(); bctx.arc(cx, cy, r, 0, Math.PI * 2); bctx.fill();
+    bctx.fillStyle = panel;
+    bctx.beginPath(); bctx.arc(cx, cy, 4 * dpr, 0, Math.PI * 2); bctx.fill();
+  }
+
+  var lastT = null, acc = 0, lastUi = 0;
+  function frame(t) {
+    if (lastT === null) lastT = t;
+    var dt = Math.min(0.1, (t - lastT) / 1000); lastT = t;
+    acc += dt;
+    while (acc >= DT) {
+      step(); acc -= DT;
+      if (!reduce) { kickTimer -= DT; if (kickTimer <= 0) { kick(); kickTimer = 5 + Math.random() * 3; } }
+    }
+    drawTrace(); drawBot();
+    if (t - lastUi > 100) {
+      lastUi = t;
+      rPitch.textContent = (th * 180 / Math.PI).toFixed(1) + '°';
+      rCmd.textContent = Math.round(cmd);
+      rState.textContent = fallen ? 'Fell over' : 'Balancing';
+      rState.className = fallen ? 'fell' : '';
+    }
+    requestAnimationFrame(frame);
+  }
+  for (var i = 0; i < WINDOW; i++) step();
+  requestAnimationFrame(frame);
+
+  function syncOut() { kpOut.textContent = kpIn.value; kdOut.textContent = kdIn.value; }
+  kpIn.addEventListener('input', syncOut);
+  kdIn.addEventListener('input', syncOut);
+  document.getElementById('kick').addEventListener('click', function () { kickTimer = 6; kick(); });
+  document.getElementById('reset').addEventListener('click', function () {
+    kpIn.value = 160; kdIn.value = 12; syncOut(); reset(); kickTimer = 4;
+  });
+
+  // ---------- Copy email ----------
+  var copyBtn = document.getElementById('copy-email');
+  copyBtn.addEventListener('click', function () {
+    var text = document.getElementById('email-v').textContent.trim();
+    var done = function () { copyBtn.textContent = 'Copied'; setTimeout(function () { copyBtn.textContent = 'Copy'; }, 1600); };
+    var fallback = function () {
+      var range = document.createRange(); range.selectNodeContents(document.getElementById('email-v'));
+      var sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(range);
+      copyBtn.textContent = 'Selected';
+      setTimeout(function () { copyBtn.textContent = 'Copy'; }, 1600);
+    };
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done, fallback);
+      } else { fallback(); }
+    } catch (e) { fallback(); }
+  });
+})();
+</script>
