@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Tyler McGrath</title>
+<meta name="description" content="Tyler McGrath, embedded software engineer: C/C++, CAN, real-time systems, and robotics. Based in New York City.">
+<meta property="og:title" content="Tyler McGrath · Embedded Software Engineer">
+<meta property="og:description" content="C/C++, CAN, real-time systems, and robotics. Onboard anomaly detection for flight firmware, autonomous robot navigation, and five years of automotive embedded work.">
+<meta property="og:type" content="website">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: an embedded engineer's bench. Instrument header strip, a live scope panel in the hero, then datasheet-style panels on an ESD-mat ground. */
+:root {
+  --mat: #D9E0DE;
+  --panel: #F6F8F7;
+  --ink: #15201F;
+  --muted: #566563;
+  --line: #B6C1BF;
+  --accent: #A85F00;
+  --trace: #0D7880;
+  --ok: #2B7F51;
+  --planned: #8A9795;
+  --fault-bg: rgba(168, 95, 0, 0.12);
+  --display: "Barlow Condensed", "Arial Narrow", "Roboto Condensed", sans-serif;
+  --body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --mat: #111716; --panel: #1A2221; --ink: #E2E9E7; --muted: #94A4A1; --line: #2F3B39;
+    --accent: #F0A440; --trace: #52C6CE; --ok: #62C98C; --planned: #66746F;
+    --fault-bg: rgba(240, 164, 64, 0.16);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --mat: #111716; --panel: #1A2221; --ink: #E2E9E7; --muted: #94A4A1; --line: #2F3B39;
+  --accent: #F0A440; --trace: #52C6CE; --ok: #62C98C; --planned: #66746F;
+  --fault-bg: rgba(240, 164, 64, 0.16);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html {
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  background: var(--mat);
+  scroll-behavior: smooth;
+}
+body {
+  margin: 0;
+  background: var(--mat);
+  color: var(--ink);
+  font-family: var(--body);
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+body::before {
+  content: ""; position: fixed; inset: 0 0 auto;
+  height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--panel);
+}
+img { max-width: 100%; }
+[hidden] { display: none !important; }
+a { color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 2px; }
+
+.wrap {
+  max-width: 1120px; margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+
+/* Header strip */
+.strip {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5;
+  background: var(--panel);
+  border-bottom: 1px solid var(--line);
+}
+.strip .wrap { display: flex; align-items: center; gap: 20px; padding-block: 10px; }
+.brand {
+  font-family: var(--display); font-weight: 700; font-size: 1.25rem;
+  letter-spacing: 0.02em; text-transform: uppercase; white-space: nowrap; text-decoration: none;
+}
+.nav { display: flex; gap: 4px; overflow-x: auto; min-width: 0; margin-left: auto; scrollbar-width: none; }
+.nav::-webkit-scrollbar { display: none; }
+.nav a {
+  font-family: var(--mono); font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase;
+  text-decoration: none; color: var(--muted); padding: 6px 10px; border-radius: 3px; white-space: nowrap;
+}
+.nav a:hover { color: var(--ink); background: var(--mat); }
+
+/* Section scaffolding */
+section { padding-block: 56px 8px; scroll-margin-top: 64px; }
+.label {
+  font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--muted); display: flex; align-items: center; gap: 10px;
+}
+.label::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+h1, h2, h3 { font-family: var(--display); text-wrap: balance; margin: 0; line-height: 1.04; }
+h2 { font-size: clamp(2rem, 4.4vw, 2.9rem); font-weight: 600; margin-top: 14px; letter-spacing: -0.005em; }
+h3 { font-size: 1.45rem; font-weight: 600; }
+.lede { max-width: 62ch; color: var(--muted); margin: 12px 0 0; }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; }
+
+.led { width: 8px; height: 8px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ok) 22%, transparent); flex: none; display: inline-block; }
+.led.pending { background: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent); }
+.led.planned { background: var(--planned); box-shadow: none; }
+
+/* Hero */
+.hero { padding-block: 40px 8px; }
+.hero-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.08fr); gap: 32px; align-items: start; }
+.status {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-family: var(--mono); font-size: 0.75rem; letter-spacing: 0.04em;
+  padding: 6px 12px 6px 10px; border: 1px solid var(--line); border-radius: 999px; background: var(--panel);
+}
+.role {
+  font-family: var(--mono); font-size: 0.8rem; letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--muted); margin: 22px 0 0;
+}
+h1 { font-size: clamp(2.8rem, 6.6vw, 4.8rem); font-weight: 700; text-transform: uppercase; letter-spacing: -0.01em; margin-top: 8px; }
+h1 .hl { color: var(--accent); }
+.intro { max-width: 52ch; margin: 18px 0 0; font-size: 1.06rem; }
+.metrics {
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1px; margin-top: 26px;
+  background: var(--line); border: 1px solid var(--line); border-radius: 6px; overflow: hidden;
+}
+.metrics div { background: var(--panel); padding: 12px 14px 14px; display: grid; gap: 4px; align-content: start; }
+.metrics b {
+  font-family: var(--display); font-weight: 700; font-size: clamp(1.7rem, 3.4vw, 2.2rem); line-height: 1;
+  font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+.metrics span { font-size: 0.82rem; color: var(--muted); line-height: 1.35; }
+
+/* Scope */
+.scope { padding: 14px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.scope-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.scope-title { font-family: var(--display); font-size: 1.15rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; }
+.scope-tag { font-family: var(--mono); font-size: 0.7rem; color: var(--muted); }
+.screen { border: 1px solid var(--line); border-radius: 4px; overflow: hidden; background: var(--mat); }
+.screen canvas { display: block; width: 100%; height: 240px; }
+.readouts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; font-family: var(--mono); font-size: 0.75rem; font-variant-numeric: tabular-nums; }
+.readouts div { border: 1px solid var(--line); border-radius: 4px; padding: 6px 8px; min-width: 0; }
+.readouts span { display: block; color: var(--muted); font-size: 0.65rem; letter-spacing: 0.08em; text-transform: uppercase; }
+.readouts b { font-weight: 600; font-size: 0.95rem; }
+#r-state.alert { color: var(--accent); }
+.gcs {
+  font-family: var(--mono); font-size: 0.72rem; line-height: 1.55; font-variant-numeric: tabular-nums;
+  border: 1px solid var(--line); border-radius: 4px; padding: 8px 10px; min-height: 6.4em;
+  margin: 0; list-style: none; overflow-x: auto; white-space: nowrap;
+}
+.gcs li { color: var(--muted); }
+.gcs li.warn { color: var(--accent); }
+.gcs li.sim { color: var(--trace); }
+.gcs .gcs-h { color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; font-size: 0.62rem; }
+.controls { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 12px; align-items: end; }
+.knob label { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 0.7rem; color: var(--muted); letter-spacing: 0.06em; text-transform: uppercase; }
+.knob output { color: var(--ink); font-variant-numeric: tabular-nums; }
+input[type=range] { width: 100%; accent-color: var(--trace); margin: 6px 0 0; }
+.btn {
+  font-family: var(--mono); font-size: 0.78rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase;
+  background: var(--ink); color: var(--panel); border: 0; border-radius: 4px; padding: 10px 14px; cursor: pointer; white-space: nowrap;
+}
+.btn:hover { background: var(--accent); color: var(--panel); }
+.btn.ghost { background: transparent; color: var(--ink); border: 1px solid var(--line); }
+.btn.ghost:hover { border-color: var(--ink); background: transparent; color: var(--ink); }
+.scope-note { font-size: 0.8rem; color: var(--muted); margin: 0; }
+
+/* Projects */
+.builds { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 16px; margin-top: 28px; }
+.build { padding: 22px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.build.lead { grid-column: span 6; }
+.build.half { grid-column: span 3; }
+.build-meta { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.build-meta .state { display: inline-flex; align-items: center; gap: 7px; color: var(--ink); }
+.build p { margin: 0; }
+.build ul.pts { margin: 0; padding-left: 1.1em; display: grid; gap: 6px; font-size: 0.95rem; }
+.build ul.pts li::marker { color: var(--muted); }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; padding: 0; margin: 0; list-style: none; }
+.chips li { font-family: var(--mono); font-size: 0.7rem; padding: 3px 8px; border: 1px solid var(--line); border-radius: 3px; color: var(--muted); }
+.build .chips { margin-top: auto; }
+.lead-grid { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 28px; }
+.spec { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; }
+.spec li { display: grid; grid-template-columns: 9.5em minmax(0, 1fr); gap: 12px; font-size: 0.93rem; }
+.spec li span:first-child { font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); padding-top: 3px; }
+.results { border: 1px solid var(--line); border-radius: 4px; overflow: hidden; align-self: start; }
+.results-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 14px; padding: 10px 12px; font-size: 0.9rem; align-items: center; }
+.results-row + .results-row { border-top: 1px solid var(--line); }
+.results-row.h { font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); background: var(--mat); }
+.results-row .num { font-family: var(--display); font-weight: 700; font-size: 1.35rem; font-variant-numeric: tabular-nums; text-align: right; line-height: 1; white-space: nowrap; }
+.pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 4px; overflow: hidden; }
+.pair div { background: var(--panel); padding: 10px 12px; display: grid; gap: 2px; }
+.pair b { font-family: var(--display); font-weight: 700; font-size: 1.6rem; line-height: 1; font-variant-numeric: tabular-nums; }
+.pair b.good { color: var(--trace); }
+.pair span { font-size: 0.8rem; color: var(--muted); line-height: 1.35; }
+.build.exploring { background: transparent; border-style: dashed; }
+
+/* Experience */
+.exp { margin-top: 28px; overflow: hidden; }
+.exp-co { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; padding: 18px 22px; border-bottom: 1px solid var(--line); background: var(--mat); }
+.exp-co h3 { font-size: 1.6rem; }
+.exp-co span { font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.exp-role { display: grid; grid-template-columns: 13em minmax(0, 1fr); gap: 24px; padding: 22px; }
+.exp-role + .exp-role { border-top: 1px solid var(--line); }
+.exp-when { font-family: var(--mono); font-size: 0.75rem; color: var(--muted); font-variant-numeric: tabular-nums; display: grid; gap: 2px; align-content: start; }
+.exp-when b { color: var(--ink); font-weight: 600; }
+.exp-body { min-width: 0; display: grid; gap: 10px; }
+.exp-body h4 { margin: 0; font-family: var(--display); font-size: 1.3rem; font-weight: 600; line-height: 1.1; }
+.exp-body ul { margin: 0; padding-left: 1.1em; display: grid; gap: 8px; max-width: 72ch; }
+.exp-body li::marker { color: var(--muted); }
+.exp-body strong { font-weight: 600; }
+
+/* Skills and education */
+.skills { margin-top: 28px; overflow: hidden; }
+.skill-row { display: grid; grid-template-columns: 13em minmax(0, 1fr); gap: 16px; padding: 14px 22px; align-items: start; }
+.skill-row + .skill-row { border-top: 1px solid var(--line); }
+.skill-row .k { font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); padding-top: 4px; }
+.skill-row .chips li { color: var(--ink); font-size: 0.74rem; }
+.edu { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-top: 16px; }
+.school { padding: 20px 22px; display: grid; gap: 8px; align-content: start; min-width: 0; }
+.school .when { font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.school p { margin: 0; }
+.school .gpa { font-family: var(--mono); font-size: 0.8rem; }
+
+/* Off the bench */
+.off { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-top: 28px; }
+.hobby { padding: 20px 22px; display: grid; gap: 8px; align-content: start; min-width: 0; }
+.hobby p { margin: 0; font-size: 0.95rem; color: var(--muted); }
+
+/* Contact */
+.contact { margin-top: 28px; padding: 28px; display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 32px; align-items: start; }
+.contact h3 { font-size: clamp(1.8rem, 3.6vw, 2.4rem); text-transform: uppercase; font-weight: 700; }
+.contact p { margin: 12px 0 0; color: var(--muted); max-width: 48ch; }
+.links { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.links li { display: grid; grid-template-columns: 6.5em minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 10px 12px; border: 1px solid var(--line); border-radius: 4px; min-height: 52px; }
+.links .k { font-family: var(--mono); font-size: 0.68rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+.links .v { font-family: var(--mono); font-size: 0.85rem; overflow-wrap: anywhere; }
+.links a.v { text-decoration-color: var(--line); text-underline-offset: 3px; }
+.links a.v:hover { text-decoration-color: var(--accent); }
+.links .go { font-family: var(--mono); color: var(--muted); }
+
+footer { padding-block: 48px 40px; }
+footer .wrap { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; font-family: var(--mono); font-size: 0.72rem; color: var(--muted); letter-spacing: 0.04em; }
+footer .rule { border-top: 1px solid var(--line); padding-top: 18px; width: 100%; display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+
+/* Responsive */
+@media (max-width: 900px) {
+  .hero-grid, .lead-grid, .contact { grid-template-columns: minmax(0, 1fr); }
+  .build.half { grid-column: span 6; }
+  .off, .edu { grid-template-columns: minmax(0, 1fr); }
+  .exp-role { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  .exp-when { grid-auto-flow: column; justify-content: start; gap: 14px; }
+}
+@media (max-width: 640px) {
+  .brand { font-size: 1.05rem; }
+  .metrics { grid-template-columns: minmax(0, 1fr); }
+  .metrics div { grid-template-columns: 6.2em minmax(0, 1fr); align-items: center; gap: 12px; }
+  .controls { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .controls .knob { grid-column: span 2; }
+  .spec li { grid-template-columns: minmax(0, 1fr); gap: 0; }
+  .skill-row { grid-template-columns: minmax(0, 1fr); gap: 6px; padding: 14px 18px; }
+  .links li { grid-template-columns: minmax(0, 1fr) auto; }
+  .links .k { grid-column: span 2; }
+  .contact { padding: 20px; }
+  .build { padding: 18px; }
+  .exp-role, .exp-co { padding-inline: 18px; }
+  .exp-when { grid-auto-flow: row; }
+  .screen canvas { height: 220px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+}
+</style>
+</head>
+<body>
+
+<header class="strip">
+  <div class="wrap">
+    <a class="brand" href="#top">Tyler McGrath</a>
+    <nav class="nav" aria-label="Sections">
+      <a href="#projects">Projects</a>
+      <a href="#experience">Experience</a>
+      <a href="#skills">Skills</a>
+      <a href="#off">Off the bench</a>
+      <a href="#contact">Contact</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top">
+  <section class="hero">
+    <div class="wrap hero-grid">
+      <div>
+        <span class="status"><span class="led"></span>Open to embedded and robotics roles · New York City</span>
+        <p class="role">Embedded software engineer · C/C++ · CAN · real-time · robotics</p>
+        <h1>Embedded software for <span class="hl">machines that move.</span></h1>
+        <p class="intro">I write code that runs close to the hardware: CAN tooling for automotive electronics, a sensor-driver classifier inside drone flight firmware, and control code for physical robots. I spent five years at Continental and I'm finishing an MS in Computer Science at Georgia Tech in December 2026.</p>
+        <div class="metrics">
+          <div><b>400 Hz</b><span>onboard IMU anomaly detection in ArduPilot</span></div>
+          <div><b>0.74 cm</b><span>final navigation error on physical robots</span></div>
+          <div><b>4d → 1d</b><span>test time per software release, after automation</span></div>
+        </div>
+      </div>
+
+      <div class="panel scope" aria-label="IMU anomaly detector simulation">
+        <div class="scope-head">
+          <span class="scope-title">IMU anomaly detector · accel Z</span>
+          <span class="scope-tag">KNN · 400 Hz · simulated</span>
+        </div>
+        <div class="screen">
+          <canvas id="scope" role="img" aria-label="Live plot of simulated accelerometer readings with the anomaly score and detection threshold below"></canvas>
+        </div>
+        <div class="readouts">
+          <div><span>Accel Z</span><b id="r-acc">9.81</b></div>
+          <div><span>Score / limit</span><b id="r-score">0.0</b></div>
+          <div><span>Status</span><b id="r-state">Nominal</b></div>
+        </div>
+        <ul class="gcs" id="gcs" aria-live="polite" aria-label="Ground station messages">
+          <li class="gcs-h">Ground station</li>
+        </ul>
+        <div class="controls">
+          <div class="knob">
+            <label for="strength">Fault strength <output id="strength-out" for="strength">3</output></label>
+            <input type="range" id="strength" min="1" max="10" step="1" value="3">
+          </div>
+          <button class="btn" id="inject" type="button">Inject vibration fault</button>
+          <button class="btn ghost" id="clear" type="button">Clear log</button>
+        </div>
+        <p class="scope-note">A browser model of how the detector works. Each window of accelerometer samples is compared against a 422-point reference of normal flight, and a high nearest-neighbor score means the window looks unlike anything normal. Shaded regions show when a fault is really present. Weak faults can slip under the threshold, which is the cost of keeping false alarms near 1%.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="projects">
+    <div class="wrap">
+      <div class="label">Projects</div>
+      <h2>Robotics and embedded projects</h2>
+
+      <div class="builds">
+        <article class="panel build lead">
+          <div class="build-meta"><span class="state"><span class="led"></span>Complete</span><span>C++ · Python · ArduPilot · SITL</span></div>
+          <h3>Onboard IMU anomaly detector for UAV flight firmware</h3>
+          <div class="lead-grid">
+            <div style="display:grid;gap:16px;align-content:start;min-width:0">
+              <p>A KNN anomaly detector built into ArduPilot's inertial sensor driver. It classifies accelerometer data in real time on the flight controller and alerts the ground station when vibration looks wrong.</p>
+              <ul class="spec">
+                <li><span>Runs in</span><span>ArduPilot's inertial sensor driver, at the 400 Hz sensor rate</span></li>
+                <li><span>Model</span><span>A 422-point reference model embedded in firmware, built from flight logs by a Python pipeline</span></li>
+                <li><span>Timing</span><span>Partial selection instead of a full sort, to fit inside the flight-control loop's time budget</span></li>
+                <li><span>Alerting</span><span>Warnings sent to the ground station over MAVLink</span></li>
+                <li><span>Tuning</span><span>Threshold set on held-out flight data, tested with injected vibration faults in SITL</span></li>
+              </ul>
+            </div>
+            <div class="results" role="table" aria-label="Detector results">
+              <div class="results-row h" role="row"><span role="columnheader">Measure</span><span role="columnheader">Result</span></div>
+              <div class="results-row" role="row"><span role="cell">Classification rate on the flight controller</span><span class="num" role="cell">400 Hz</span></div>
+              <div class="results-row" role="row"><span role="cell">Normal readings kept under threshold (held-out data)</span><span class="num" role="cell">99%</span></div>
+              <div class="results-row" role="row"><span role="cell">Injected vibration fault samples flagged</span><span class="num" role="cell">54–80%</span></div>
+              <div class="results-row" role="row"><span role="cell">Reference points embedded in firmware</span><span class="num" role="cell">422</span></div>
+            </div>
+          </div>
+        </article>
+
+        <article class="panel build half">
+          <div class="build-meta"><span class="state"><span class="led"></span>Complete</span><span>Georgia Tech Robotarium</span></div>
+          <h3>Autonomous navigation and multi-agent coordination</h3>
+          <div class="pair">
+            <div><b class="good">0.74 cm</b><span>final error with feedback heading control</span></div>
+            <div><b>9.3 cm</b><span>open-loop drift on the same robots</span></div>
+          </div>
+          <ul class="pts">
+            <li>State-machine waypoint navigation with feedback heading control on physical differential-drive robots.</li>
+            <li>Fixed failures that only showed up on hardware, a ~2 cm pose offset and ~0.4 s command lag, with latched states and predictive stopping.</li>
+            <li>Coordinated 3 robots simulating aircraft through constrained airspace with sequenced landings and holding patterns. A Python checker confirmed zero separation or speed violations across every logged run.</li>
+          </ul>
+          <ul class="chips"><li>Python</li><li>Feedback control</li><li>State machines</li><li>Multi-robot</li></ul>
+        </article>
+
+        <article class="panel build half">
+          <div class="build-meta"><span class="state"><span class="led"></span>Complete</span><span>Undergrad capstone</span></div>
+          <h3>Vision-guided autonomous retrieval robot</h3>
+          <p>Designed, wired, and built a tracked robot from scratch: an ultrasonic sensor array, H-bridge motor control, a front camera, and a magnetic collector with switch-based pickup detection, all run from a Raspberry Pi.</p>
+          <ul class="pts">
+            <li>Navigated a maze by wall-following, found a colored target with OpenCV, collected it, and returned to the start.</li>
+            <li>Averaged 5 ultrasonic readings per measurement to reject noise, and retuned detection after lighting changes caused false positives.</li>
+          </ul>
+          <ul class="chips"><li>Python</li><li>OpenCV</li><li>Raspberry Pi</li><li>H-bridge</li><li>Ultrasonic sensors</li></ul>
+        </article>
+
+        <article class="panel build half">
+          <div class="build-meta"><span class="state"><span class="led"></span>Complete</span><span>Python</span></div>
+          <h3>Probabilistic robot localization and path planning</h3>
+          <p>Implemented extended Kalman filters and particle filters to localize and track autonomous agents from noisy sensor measurements, and built A* path planning for navigation.</p>
+          <ul class="chips"><li>Extended Kalman filter</li><li>Particle filter</li><li>A*</li><li>Python</li></ul>
+        </article>
+
+        <article class="panel build half exploring">
+          <div class="build-meta"><span class="state"><span class="led planned"></span>Currently exploring</span></div>
+          <h3>SLAM and sensor fusion on a mobile manipulator</h3>
+          <p>Looking at getting graph-based SLAM running on a real mobile robot with a 2D lidar, an IMU, and onboard cameras, and adding the sensor fusion it needs to localize reliably.</p>
+          <ul class="chips"><li>GraphSLAM</li><li>2D lidar</li><li>IMU fusion</li><li>Raspberry Pi 5</li></ul>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section id="experience">
+    <div class="wrap">
+      <div class="label">Experience</div>
+      <h2>Five years of automotive embedded work</h2>
+
+      <div class="panel exp">
+        <div class="exp-co"><h3>Continental AG (now Aumovio)</h3><span>Automotive electronics</span></div>
+
+        <div class="exp-role">
+          <div class="exp-when"><b>Sept 2024 – May 2026</b><span>Auburn Hills, MI</span></div>
+          <div class="exp-body">
+            <h4>Software Test Engineer</h4>
+            <ul>
+              <li><strong>CAN network simulation and logging.</strong> Wrote embedded C++ for an Arduino-based CAN data logger that used a circular buffer on the CAN controller to capture and reformat frames, so the team could reproduce and debug issues on the bench instead of in the vehicle.</li>
+              <li><strong>Radar visualization tooling.</strong> Built a real-time pipeline that published radar object data from CAN through an MQTT server on a Raspberry Pi to an Android app rendering object positions. The team adopted it for customer demos.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="exp-role">
+          <div class="exp-when"><b>June 2021 – Sept 2024</b><span>Auburn Hills, MI</span></div>
+          <div class="exp-body">
+            <h4>Associate Test Engineer</h4>
+            <ul>
+              <li><strong>Automated test framework.</strong> Architected modular automation in NI TestStand (C#, Python) that drove RF signal generators and hardware through vendor DLL APIs for TPMS sensor validation. Cut test time from 4 days to 1 per software version, across 100+ test cases and 50+ versions.</li>
+              <li><strong>Aurora PCU automation.</strong> Wrote hardware-in-the-loop validation scripts in CAPL, vTESTstudio, and CANoe for the Aurora Peripheral Control Unit, replacing manual testing with automated regression.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="exp-role">
+          <div class="exp-when"><b>June 2018 – July 2019</b><span>Troy, MI</span></div>
+          <div class="exp-body">
+            <h4>Electrical Engineering Intern</h4>
+            <ul>
+              <li>Supported hardware and software validation of body control module PCB prototypes for FCA, Ford, GM, and Toyota. Ran bench tests and wrote requirements for the test harness, catching defects before they reached production.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="skills">
+    <div class="wrap">
+      <div class="label">Skills and education</div>
+      <h2>Tools I work with</h2>
+
+      <div class="panel skills">
+        <div class="skill-row"><span class="k">Software</span>
+          <ul class="chips"><li>C</li><li>C++</li><li>Python</li><li>CAPL</li><li>Kotlin</li><li>Java</li><li>MIPS assembly</li><li>Git</li></ul></div>
+        <div class="skill-row"><span class="k">Robotics and ML</span>
+          <ul class="chips"><li>PyTorch</li><li>OpenCV</li><li>NumPy</li><li>scikit-learn</li><li>Particle and Kalman filters</li><li>A*</li><li>ArduPilot</li><li>MAVLink</li><li>SITL</li><li>Pixhawk</li></ul></div>
+        <div class="skill-row"><span class="k">Embedded and protocols</span>
+          <ul class="chips"><li>CAN</li><li>STM32 (ARM Cortex-M)</li><li>Arduino</li><li>Raspberry Pi (Linux)</li><li>UART</li><li>ADC</li><li>Timers and interrupts</li><li>Multithreading</li><li>IPC</li><li>MQTT</li></ul></div>
+        <div class="skill-row"><span class="k">Hardware</span>
+          <ul class="chips"><li>Oscilloscope</li><li>DMM</li><li>Function generator</li><li>Soldering</li><li>Eagle PCB design</li></ul></div>
+        <div class="skill-row"><span class="k">Automotive tools</span>
+          <ul class="chips"><li>Vector CANoe</li><li>CANalyzer</li><li>vTESTstudio</li><li>NI TestStand</li><li>Vehicle Spy</li><li>IBM DOORS</li><li>Jira</li></ul></div>
+      </div>
+
+      <div class="edu">
+        <div class="panel school">
+          <span class="when">Graduating Dec 2026</span>
+          <h3>Georgia Institute of Technology</h3>
+          <p>Master of Science in Computer Science · <span class="gpa">GPA 3.8</span></p>
+          <ul class="chips"><li>Graduate OS</li><li>Cyber-Physical Systems</li><li>Drone Security</li><li>AI for Robotics</li><li>Machine Learning</li><li>Deep Learning</li></ul>
+        </div>
+        <div class="panel school">
+          <span class="when">April 2020</span>
+          <h3>Wayne State University</h3>
+          <p>Bachelor of Science in Electrical Engineering</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="off">
+    <div class="wrap">
+      <div class="label">Off the bench</div>
+      <h2>Away from the keyboard</h2>
+      <div class="off">
+        <article class="panel hobby">
+          <h3>Climbing</h3>
+          <p>Climbing is problem solving with your whole body. Read the route, commit to a sequence, fall, adjust, and try again.</p>
+        </article>
+        <article class="panel hobby">
+          <h3>Skiing</h3>
+          <p>Winters go to the mountains. It's the best reason I know to be up before sunrise on a Saturday.</p>
+        </article>
+        <article class="panel hobby">
+          <h3>Sword fighting</h3>
+          <p>Timing, distance, and reacting faster than the other person. It's a closed control loop with a lot more adrenaline.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section id="contact">
+    <div class="wrap">
+      <div class="label">Contact</div>
+      <div class="panel contact">
+        <div>
+          <h3>Building something physical? Let's talk.</h3>
+          <p>I'm looking for embedded software and robotics roles in the New York area, and I'm always happy to talk shop with people working on robots, drones, or vehicles.</p>
+        </div>
+        <ul class="links">
+          <li><span class="k">Email</span><a class="v" id="email-v" href="mailto:tylerjmcgrath@yahoo.com">tylerjmcgrath@yahoo.com</a><button class="btn ghost" id="copy-email" type="button">Copy</button></li>
+          <li><span class="k">GitHub</span><a class="v" href="https://github.com/TylerMcGrath" target="_blank" rel="noopener">github.com/TylerMcGrath</a><span class="go" aria-hidden="true">↗</span></li>
+          <li><span class="k">LinkedIn</span><a class="v" href="https://www.linkedin.com/in/tyler-mcgrath0/" target="_blank" rel="noopener">linkedin.com/in/tyler-mcgrath0</a><span class="go" aria-hidden="true">↗</span></li>
+          <li><span class="k">Resume</span><a class="v" href="TylerMcGrath_Resume2026.pdf" target="_blank" rel="noopener">TylerMcGrath_Resume2026.pdf</a><span class="go" aria-hidden="true">↗</span></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="rule"><span>Tyler McGrath · New York City</span><span>Last updated Nov 2026</span></div>
+  </div>
+</footer>
+
+<script>
+(function () {
+  // ---------- IMU anomaly detector model ----------
+  var FS = 400, WIN = 32, HOP = 8, K = 3, REF_N = 422;
+  var G = 9.81;
+
+  function gauss() {
+    var u = 1 - Math.random(), v = Math.random();
+    return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+  }
+
+  // Simulated accelerometer: gravity, slow flight motion, sensor noise, optional vibration fault
+  function Gen() {
+    this.n = 0;
+    this.p = [Math.random() * 6.28, Math.random() * 6.28, Math.random() * 6.28];
+    this.fault = 0; this.faultLeft = 0; this.vibPhase = 0;
+  }
+  Gen.prototype.sample = function () {
+    var t = this.n / FS; this.n++;
+    var a = G
+      + 0.45 * Math.sin(2 * Math.PI * 0.35 * t + this.p[0])
+      + 0.25 * Math.sin(2 * Math.PI * 1.1 * t + this.p[1])
+      + 0.12 * Math.sin(2 * Math.PI * 2.7 * t + this.p[2])
+      + 0.09 * gauss();
+    var active = false;
+    if (this.faultLeft > 0) {
+      this.faultLeft--;
+      active = true;
+      var env = 0.35 + 0.65 * Math.abs(Math.sin(2 * Math.PI * 1.4 * t));
+      this.vibPhase += 2 * Math.PI * (68 + 6 * Math.sin(t * 3)) / FS;
+      a += this.fault * env * Math.sin(this.vibPhase) + this.fault * 0.15 * gauss();
+    }
+    return { a: a, f: active };
+  };
+
+  // Window features: standard deviation and mean absolute sample-to-sample change
+  function FX() { this.ring = new Float32Array(WIN); this.i = 0; this.count = 0; }
+  FX.prototype.push = function (a) { this.ring[this.i] = a; this.i = (this.i + 1) % WIN; this.count++; };
+  FX.prototype.features = function () {
+    var r = this.ring, m = 0, j;
+    for (j = 0; j < WIN; j++) m += r[j];
+    m /= WIN;
+    var v = 0, d = 0;
+    for (j = 0; j < WIN; j++) {
+      var x = r[(this.i + j) % WIN];
+      v += (x - m) * (x - m);
+      if (j > 0) d += Math.abs(x - r[(this.i + j - 1) % WIN]);
+    }
+    return [Math.sqrt(v / WIN), d / (WIN - 1)];
+  };
+
+  function collect(nDecisions) {
+    var g = new Gen(), fx = new FX(), out = [];
+    for (var s = 0; s < WIN; s++) fx.push(g.sample().a);
+    for (var k = 0; k < nDecisions; k++) {
+      for (var h = 0; h < HOP; h++) fx.push(g.sample().a);
+      out.push(fx.features());
+    }
+    return out;
+  }
+
+  // Build the 422-point reference model from "flight logs", z-score normalized
+  var raw = collect(REF_N * 4).filter(function (_, i) { return i % 4 === 0; }).slice(0, REF_N);
+  var mu = [0, 0], sd = [0, 0];
+  raw.forEach(function (f) { mu[0] += f[0]; mu[1] += f[1]; });
+  mu[0] /= raw.length; mu[1] /= raw.length;
+  raw.forEach(function (f) { sd[0] += (f[0] - mu[0]) * (f[0] - mu[0]); sd[1] += (f[1] - mu[1]) * (f[1] - mu[1]); });
+  sd[0] = Math.sqrt(sd[0] / raw.length) || 1; sd[1] = Math.sqrt(sd[1] / raw.length) || 1;
+  var REF = raw.map(function (f) { return [(f[0] - mu[0]) / sd[0], (f[1] - mu[1]) / sd[1]]; });
+
+  // KNN score with partial selection of the K nearest
+  function score(f) {
+    var x = (f[0] - mu[0]) / sd[0], y = (f[1] - mu[1]) / sd[1];
+    var best = [Infinity, Infinity, Infinity];
+    for (var i = 0; i < REF.length; i++) {
+      var dx = REF[i][0] - x, dy = REF[i][1] - y, d = dx * dx + dy * dy;
+      if (d < best[K - 1]) {
+        var j = K - 1;
+        while (j > 0 && best[j - 1] > d) { best[j] = best[j - 1]; j--; }
+        best[j] = d;
+      }
+    }
+    return (Math.sqrt(best[0]) + Math.sqrt(best[1]) + Math.sqrt(best[2])) / K;
+  }
+
+  // Threshold at the 99th percentile of held-out normal data
+  var held = collect(3000).map(score).sort(function (a, b) { return a - b; });
+  var THRESH = held[Math.floor(held.length * 0.99)];
+  var SMAX = THRESH * 4;
+
+  // ---------- Live state ----------
+  var gen = new Gen(), fx = new FX();
+  var SPAN = 800; // 2 s of samples
+  var acc = new Float32Array(SPAN), truth = new Uint8Array(SPAN), head = 0;
+  var DSPAN = SPAN / HOP;
+  var sc = new Float32Array(DSPAN), flag = new Uint8Array(DSPAN), dhead = 0;
+  var sinceHop = 0, streakHi = 0, streakLo = 0, alert = false, lastScore = 0, lastAcc = G;
+  var elapsed = 0;
+
+  var strengthIn = document.getElementById('strength');
+  var strengthOut = document.getElementById('strength-out');
+  var gcs = document.getElementById('gcs');
+  var rAcc = document.getElementById('r-acc'), rScore = document.getElementById('r-score'), rState = document.getElementById('r-state');
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function stamp() { return 'T+' + (elapsed).toFixed(2).padStart(7, '0') + 's'; }
+  function log(text, cls) {
+    var li = document.createElement('li');
+    li.textContent = stamp() + '  ' + text;
+    if (cls) li.className = cls;
+    gcs.appendChild(li);
+    var items = gcs.querySelectorAll('li:not(.gcs-h)');
+    for (var i = 0; i < items.length - 4; i++) items[i].remove();
+  }
+  function amp() { var s = +strengthIn.value; return 0.06 * Math.pow(s, 1.35); }
+  function inject() {
+    gen.fault = amp();
+    gen.faultLeft = Math.round(FS * 1.6);
+    log('SIM  vibration fault injected, strength ' + strengthIn.value, 'sim');
+  }
+
+  function step() {
+    var s = gen.sample();
+    elapsed += 1 / FS;
+    fx.push(s.a);
+    acc[head] = s.a; truth[head] = s.f ? 1 : 0; head = (head + 1) % SPAN;
+    lastAcc = s.a;
+    if (++sinceHop >= HOP) {
+      sinceHop = 0;
+      var v = score(fx.features());
+      lastScore = v;
+      var hi = v > THRESH;
+      sc[dhead] = v; flag[dhead] = hi ? 1 : 0; dhead = (dhead + 1) % DSPAN;
+      if (hi) { streakHi++; streakLo = 0; } else { streakLo++; streakHi = 0; }
+      if (!alert && streakHi >= 3) {
+        alert = true;
+        log('STATUSTEXT WARNING  IMU0 vibration anomaly, score ' + v.toFixed(1), 'warn');
+      } else if (alert && streakLo >= 25) {
+        alert = false;
+        log('STATUSTEXT INFO  IMU0 nominal');
+      }
+    }
+  }
+
+  // ---------- Drawing ----------
+  var cv = document.getElementById('scope'), ctx = cv.getContext('2d');
+  function tok(n) { return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
+  function size() {
+    var dpr = Math.min(window.devicePixelRatio || 1, 2), r = cv.getBoundingClientRect();
+    var w = Math.max(1, Math.round(r.width * dpr)), h = Math.max(1, Math.round(r.height * dpr));
+    if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h; }
+    return dpr;
+  }
+
+  function draw() {
+    var dpr = size(), W = cv.width, H = cv.height;
+    var line = tok('--line'), muted = tok('--muted'), tr = tok('--trace'), ac = tok('--accent'), fbg = tok('--fault-bg');
+    ctx.clearRect(0, 0, W, H);
+    ctx.font = (10 * dpr) + 'px "JetBrains Mono", ui-monospace, monospace';
+    var padL = 38 * dpr, padR = 10 * dpr, padT = 10 * dpr, gap = 22 * dpr, padB = 18 * dpr;
+    var pw = W - padL - padR;
+    var h1 = (H - padT - gap - padB) * 0.58, h2 = (H - padT - gap - padB) - h1;
+    var top1 = padT, top2 = padT + h1 + gap;
+    var AMIN = 7, AMAX = 12.6;
+    function ya(v) { v = Math.max(AMIN, Math.min(AMAX, v)); return top1 + h1 - (v - AMIN) / (AMAX - AMIN) * h1; }
+    function ys(v) { v = Math.max(0, Math.min(SMAX, v)); return top2 + h2 - (v / SMAX) * h2; }
+    function xs(i, n) { return padL + pw * (i / (n - 1)); }
+
+    // fault ground-truth shading
+    ctx.fillStyle = fbg;
+    var runStart = -1;
+    for (var i = 0; i <= SPAN; i++) {
+      var on = i < SPAN && truth[(head + i) % SPAN];
+      if (on && runStart < 0) runStart = i;
+      if (!on && runStart >= 0) {
+        var x0 = xs(runStart, SPAN), x1 = xs(i - 1, SPAN);
+        ctx.fillRect(x0, top1, Math.max(1, x1 - x0), h1);
+        ctx.fillRect(x0, top2, Math.max(1, x1 - x0), h2);
+        runStart = -1;
+      }
+    }
+
+    // grids and labels
+    ctx.lineWidth = 1 * dpr; ctx.strokeStyle = line;
+    ctx.fillStyle = muted; ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+    [8, 10, 12].forEach(function (v) {
+      var y = ya(v);
+      ctx.globalAlpha = 0.7; ctx.setLineDash([3 * dpr, 4 * dpr]);
+      ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(W - padR, y); ctx.stroke();
+      ctx.globalAlpha = 1; ctx.setLineDash([]);
+      ctx.fillText(v + '', padL - 6 * dpr, y);
+    });
+    ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+    ctx.fillText('m/s²', padL + 4 * dpr, top1 + 2 * dpr);
+    ctx.fillText('KNN score', padL + 4 * dpr, top2 + 2 * dpr);
+    ctx.strokeStyle = line;
+    ctx.beginPath(); ctx.moveTo(padL, top2 + h2); ctx.lineTo(W - padR, top2 + h2); ctx.stroke();
+    ctx.textAlign = 'center';
+    ctx.fillText('-2 s', padL + 10 * dpr, H - padB + 5 * dpr);
+    ctx.fillText('now', padL + pw - 10 * dpr, H - padB + 5 * dpr);
+
+    // threshold
+    var yt = ys(THRESH);
+    ctx.strokeStyle = ac; ctx.setLineDash([5 * dpr, 4 * dpr]); ctx.lineWidth = 1.2 * dpr;
+    ctx.beginPath(); ctx.moveTo(padL, yt); ctx.lineTo(W - padR, yt); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = ac; ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+    ctx.fillText('limit', padL - 6 * dpr, yt);
+
+    // accel trace
+    ctx.strokeStyle = tr; ctx.lineWidth = 1.3 * dpr; ctx.lineJoin = 'round';
+    ctx.beginPath();
+    for (i = 0; i < SPAN; i++) {
+      var xx = xs(i, SPAN), yy = ya(acc[(head + i) % SPAN]);
+      if (i === 0) ctx.moveTo(xx, yy); else ctx.lineTo(xx, yy);
+    }
+    ctx.stroke();
+
+    // score trace, colored where flagged
+    ctx.lineWidth = 2 * dpr;
+    for (i = 1; i < DSPAN; i++) {
+      var a = (dhead + i - 1) % DSPAN, b = (dhead + i) % DSPAN;
+      ctx.strokeStyle = flag[b] ? ac : tr;
+      ctx.beginPath();
+      ctx.moveTo(xs(i - 1, DSPAN), ys(sc[a]));
+      ctx.lineTo(xs(i, DSPAN), ys(sc[b]));
+      ctx.stroke();
+    }
+    var lastIdx = (dhead + DSPAN - 1) % DSPAN;
+    ctx.fillStyle = flag[lastIdx] ? ac : tr;
+    ctx.beginPath(); ctx.arc(padL + pw, ys(sc[lastIdx]), 3.2 * dpr, 0, Math.PI * 2); ctx.fill();
+  }
+
+  var lastT = null, accum = 0, lastUi = 0, autoTimer = 2.5;
+  function frame(t) {
+    if (lastT === null) lastT = t;
+    var dt = Math.min(0.1, (t - lastT) / 1000); lastT = t;
+    accum += dt;
+    var steps = Math.floor(accum * FS);
+    accum -= steps / FS;
+    for (var i = 0; i < steps; i++) step();
+    if (!reduce) {
+      autoTimer -= dt;
+      if (autoTimer <= 0) { inject(); autoTimer = 6 + Math.random() * 3; }
+    }
+    draw();
+    if (t - lastUi > 120) {
+      lastUi = t;
+      rAcc.textContent = lastAcc.toFixed(2);
+      rScore.textContent = lastScore.toFixed(1) + ' / ' + THRESH.toFixed(1);
+      rState.textContent = alert ? 'Anomaly' : 'Nominal';
+      rState.className = alert ? 'alert' : '';
+    }
+    requestAnimationFrame(frame);
+  }
+
+  for (var s = 0; s < WIN; s++) fx.push(gen.sample().a);
+  for (var p = 0; p < SPAN; p++) step();
+  elapsed = 0;
+  draw();
+  requestAnimationFrame(frame);
+
+  strengthIn.addEventListener('input', function () { strengthOut.textContent = strengthIn.value; });
+  document.getElementById('inject').addEventListener('click', function () { inject(); autoTimer = 7; });
+  document.getElementById('clear').addEventListener('click', function () {
+    gcs.querySelectorAll('li:not(.gcs-h)').forEach(function (li) { li.remove(); });
+  });
+
+  // ---------- Copy email ----------
+  var copyBtn = document.getElementById('copy-email');
+  copyBtn.addEventListener('click', function () {
+    var el = document.getElementById('email-v'), text = el.textContent.trim();
+    var reset = function () { setTimeout(function () { copyBtn.textContent = 'Copy'; }, 1600); };
+    var fallback = function () {
+      var range = document.createRange(); range.selectNodeContents(el);
+      var sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(range);
+      copyBtn.textContent = 'Selected'; reset();
+    };
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(function () { copyBtn.textContent = 'Copied'; reset(); }, fallback);
+      } else { fallback(); }
+    } catch (e) { fallback(); }
+  });
+})();
+</script>
+</body>
+</html>
