@@ -157,7 +157,7 @@ h1 .hl { color: var(--accent); }
 .seg button[aria-pressed="true"] { background: var(--ink); color: var(--panel); }
 .chk { display: inline-flex; align-items: center; gap: 7px; font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink); padding: 8px 10px; border: 1px solid var(--line); border-radius: 4px; cursor: pointer; user-select: none; }
 .chk input { accent-color: var(--trace); margin: 0; }
-.chk.off { opacity: 0.45; cursor: default; }
+.chk.is-off { opacity: 0.45; cursor: default; }
 .legend { display: flex; flex-wrap: wrap; gap: 14px; font-family: var(--mono); font-size: 0.68rem; color: var(--muted); letter-spacing: 0.04em; }
 .legend i { display: inline-block; width: 10px; height: 10px; margin-right: 6px; vertical-align: -1px; border-radius: 50%; }
 .legend i.robot { background: var(--ink); }
@@ -182,18 +182,29 @@ h1 .hl { color: var(--accent); }
 .scope-note { font-size: 0.8rem; color: var(--muted); margin: 0; }
 
 /* Projects */
-.builds { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 16px; margin-top: 28px; }
-.build { padding: 22px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
-.build.lead { grid-column: span 6; }
-.build.half { grid-column: span 3; }
-.build-meta { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
-.build-meta .state { display: inline-flex; align-items: center; gap: 7px; color: var(--ink); }
-.build p { margin: 0; }
-.build ul.pts { margin: 0; padding-left: 1.1em; display: grid; gap: 6px; font-size: 0.95rem; }
-.build ul.pts li::marker { color: var(--muted); }
+.projects { display: grid; gap: 12px; margin-top: 28px; }
+.proj > summary { list-style: none; cursor: pointer; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 16px; align-items: center; padding: 18px 22px; border-radius: 6px; }
+.proj > summary::-webkit-details-marker { display: none; }
+.proj > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.proj-head { display: grid; gap: 6px; min-width: 0; }
+.proj-head h3 { font-size: clamp(1.3rem, 2.4vw, 1.6rem); }
+.proj-meta { display: block; font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); line-height: 1.4; }
+.proj-meta .led { margin-right: 8px; vertical-align: 1px; }
+.proj-toggle { width: 32px; height: 32px; border: 1px solid var(--line); border-radius: 4px; position: relative; flex: none; }
+.proj-toggle::before, .proj-toggle::after { content: ""; position: absolute; left: 50%; top: 50%; width: 12px; height: 2px; background: var(--ink); transform: translate(-50%, -50%); transition: transform 0.2s ease; }
+.proj-toggle::after { transform: translate(-50%, -50%) rotate(90deg); }
+.proj[open] .proj-toggle::after { transform: translate(-50%, -50%) rotate(0deg); }
+.proj > summary:hover .proj-toggle { border-color: var(--ink); }
+.proj-body { border-top: 1px solid var(--line); padding: 18px 22px 22px; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.proj-body p { margin: 0; max-width: 72ch; }
+.proj-body ul.pts { margin: 0; padding-left: 1.1em; display: grid; gap: 6px; font-size: 0.95rem; max-width: 72ch; }
+.proj-body ul.pts li::marker { color: var(--muted); }
+.proj-body .pair { max-width: 520px; }
+.proj.exploring { background: transparent; border-style: dashed; }
+.demo-link { align-self: flex-start; font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--trace); text-decoration: none; border-bottom: 1px solid currentColor; padding-bottom: 1px; }
+.demo-link:hover { color: var(--accent); }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; padding: 0; margin: 0; list-style: none; }
 .chips li { font-family: var(--mono); font-size: 0.7rem; padding: 3px 8px; border: 1px solid var(--line); border-radius: 3px; color: var(--muted); }
-.build .chips { margin-top: auto; }
 .lead-grid { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 28px; }
 .spec { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; }
 .spec li { display: grid; grid-template-columns: 9.5em minmax(0, 1fr); gap: 12px; font-size: 0.93rem; }
@@ -208,7 +219,6 @@ h1 .hl { color: var(--accent); }
 .pair b { font-family: var(--display); font-weight: 700; font-size: 1.6rem; line-height: 1; font-variant-numeric: tabular-nums; }
 .pair b.good { color: var(--trace); }
 .pair span { font-size: 0.8rem; color: var(--muted); line-height: 1.35; }
-.build.exploring { background: transparent; border-style: dashed; }
 
 /* Experience */
 .exp { margin-top: 28px; overflow: hidden; }
@@ -264,7 +274,6 @@ footer .rule { border-top: 1px solid var(--line); padding-top: 18px; width: 100%
 /* Responsive */
 @media (max-width: 900px) {
   .hero-grid, .lead-grid, .contact { grid-template-columns: minmax(0, 1fr); }
-  .build.half { grid-column: span 6; }
   .off-layout, .edu { grid-template-columns: minmax(0, 1fr); }
   .photo { min-height: 0; aspect-ratio: 4 / 3; max-width: 100%; }
   .exp-role { grid-template-columns: minmax(0, 1fr); gap: 8px; }
@@ -281,12 +290,15 @@ footer .rule { border-top: 1px solid var(--line); padding-top: 18px; width: 100%
   .links li { grid-template-columns: minmax(0, 1fr) auto; }
   .links .k { grid-column: span 2; }
   .contact { padding: 20px; }
-  .build { padding: 18px; }
+  .proj > summary { padding: 16px 18px; }
+  .proj-body { padding: 16px 18px 18px; }
+  .proj-toggle { width: 28px; height: 28px; }
   .exp-role, .exp-co { padding-inline: 18px; }
   .exp-when { grid-auto-flow: row; }
 }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
+  .proj-toggle::before, .proj-toggle::after { transition: none; }
 }
 </style>
 </head>
@@ -311,11 +323,11 @@ footer .rule { border-top: 1px solid var(--line); padding-top: 18px; width: 100%
       <div>
         <span class="status"><span class="led"></span>Open to embedded and robotics roles · New York City</span>
         <p class="role">Embedded software engineer · C/C++ · PYTHON · CAN · robotics</p>
-        <h1>Embedded software for <span class="hl">machines that move.</span></h1>
-        <p class="intro">I write code that runs close to the hardware, control code for physical robots, and machine learning classifiers. I spent five years at Continental and I'm finishing an MS in Computer Science at Georgia Tech in December 2026.</p>
+        <h1>Making machines <span class="hl">a little smarter</span></h1>
+        <p class="intro">Howdy! I'm Tyler, and I like to write code that makes machines move, see, learn. I spent five years in automotive and I'm finishing an MS in Computer Science at Georgia Tech in December 2026, where I've been focusing on AI, ML, and cyber physical systems.</p>
         <div class="metrics">
-          <div><b>400 Hz</b><span>IMU anomaly detection in ArduPilot SITL</span></div>
           <div><b>0.74 cm</b><span>final navigation error on physical robots</span></div>
+          <div><b>0</b><span>separation violations across 3 coordinated robots</span></div>
           <div><b>4d → 1d</b><span>test time per software release, after automation</span></div>
         </div>
       </div>
@@ -343,7 +355,7 @@ footer .rule { border-top: 1px solid var(--line); padding-top: 18px; width: 100%
               <button type="button" id="m-ol" aria-pressed="false">Open loop</button>
             </div>
             <label class="chk" for="lag"><input type="checkbox" id="lag">0.4 s command lag</label>
-            <label class="chk off" for="pred" id="pred-l"><input type="checkbox" id="pred" checked disabled>Predictive stopping</label>
+            <label class="chk is-off" for="pred" id="pred-l"><input type="checkbox" id="pred" checked disabled>Predictive stopping</label>
           </div>
           <div class="legend"><span><i class="fb"></i>feedback path</span><span><i class="ol"></i>open-loop path</span><span>rings show stop error</span></div>
           <p class="scope-note">Click the arena to add waypoints. The wheels are slightly mismatched, like real hardware. Feedback control corrects for it and open loop can't, so open-loop errors pile up from leg to leg. A simulation based on my Robotarium project.</p>
@@ -371,74 +383,138 @@ footer .rule { border-top: 1px solid var(--line); padding-top: 18px; width: 100%
     </div>
   </section>
 
+  <section id="off">
+    <div class="wrap">
+      <div class="label">Off the bench</div>
+      <h2>Away from the keyboard</h2>
+      <div class="off-layout">
+        <figure class="panel photo">
+          <img src="assets/climbing.jpg" alt="Tyler climbing a granite sea cliff on a blue rope, red helmet on, with the ocean far below" width="900" height="1200" loading="lazy" decoding="async">
+        </figure>
+        <div class="off">
+          <article class="panel hobby">
+            <h3>Climbing</h3>
+            <p>Climbing is problem solving with your whole body.</p>
+          </article>
+          <article class="panel hobby">
+            <h3>Skiing</h3>
+            <p>From humble beginnings in Michigan, working my way up "real" mountains in the East. It's the reason to be excited for winter.</p>
+          </article>
+          <article class="panel hobby">
+            <h3>Sword fighting</h3>
+            <p>Still learning this one. Focusing on HEMA longsword. It's a surprisingly good workout. Like boxing, but from long range.</p>
+          </article>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <section id="projects">
     <div class="wrap">
       <div class="label">Projects</div>
       <h2>Robotics and embedded projects</h2>
+      <p class="lede">Fascinate Tyler with a robotics problem. Open any project for the details.</p>
 
-      <div class="builds">
-        <article class="panel build lead">
-          <div class="build-meta"><span class="state"><span class="led"></span>Complete</span><span>C++ · Python · ArduPilot · SITL</span></div>
-          <h3>IMU anomaly detector for ArduPilot</h3>
-          <div class="lead-grid">
-            <div style="display:grid;gap:16px;align-content:start;min-width:0">
-              <p>A KNN anomaly detector built into ArduPilot's inertial sensor driver and tested in its software-in-the-loop (SITL) simulator. It classifies accelerometer data in real time and alerts the ground station over MAVLink when vibration looks wrong.</p>              <ul class="spec">
+      <div class="projects">
+        <details class="panel proj" open>
+          <summary>
+            <span class="proj-head">
+              <h3>Getting a robot to stop exactly where you tell it to</h3>
+              <span class="proj-meta"><span class="led"></span>Autonomous navigation and multi-agent coordination · Python</span>
+            </span>
+            <span class="proj-toggle" aria-hidden="true"></span>
+          </summary>
+          <div class="proj-body">
+            <div class="pair">
+              <div><b class="good">0.74 cm</b><span>final error with feedback heading control</span></div>
+              <div><b>9.3 cm</b><span>open-loop drift on the same robots</span></div>
+            </div>
+            <ul class="pts">
+              <li>State-machine waypoint navigation with feedback heading control on physical differential-drive robots.</li>
+              <li>Fixed failures that only showed up on hardware, a ~2 cm pose offset and ~0.4 s command lag, with latched states and predictive stopping.</li>
+              <li>Coordinated 3 robots simulating aircraft through constrained airspace with sequenced landings and holding patterns. A Python checker confirmed zero separation or speed violations across every logged run.</li>
+            </ul>
+            <ul class="chips"><li>Python</li><li>Feedback control</li><li>State machines</li><li>Multi-robot</li></ul>
+            <a class="demo-link" href="#top" data-demo="nav">Try the navigation demo ↑</a>
+          </div>
+        </details>
+
+        <details class="panel proj">
+          <summary>
+            <span class="proj-head">
+              <h3>Working out where a robot is from noisy sensors</h3>
+              <span class="proj-meta"><span class="led"></span>Probabilistic localization and path planning · Python</span>
+            </span>
+            <span class="proj-toggle" aria-hidden="true"></span>
+          </summary>
+          <div class="proj-body">
+            <p>Implemented extended Kalman filters and particle filters to localize and track autonomous agents from noisy sensor measurements, and built A* path planning for navigation.</p>
+            <ul class="chips"><li>Extended Kalman filter</li><li>Particle filter</li><li>A*</li><li>Python</li></ul>
+            <a class="demo-link" href="#top" data-demo="pf">Try the localization demo ↑</a>
+          </div>
+        </details>
+
+        <details class="panel proj">
+          <summary>
+            <span class="proj-head">
+              <h3>Building a robot from the wiring up</h3>
+              <span class="proj-meta"><span class="led"></span>Vision-guided autonomous retrieval robot · Hardware, Python</span>
+            </span>
+            <span class="proj-toggle" aria-hidden="true"></span>
+          </summary>
+          <div class="proj-body">
+            <p>Designed, wired, and built a tracked robot from scratch: an ultrasonic sensor array, H-bridge motor control, a front camera, and a magnetic collector with switch-based pickup detection, all run from a Raspberry Pi.</p>
+            <ul class="pts">
+              <li>Navigated a maze by wall-following, found a colored target with OpenCV, collected it, and returned to the start.</li>
+              <li>Averaged 5 ultrasonic readings per measurement to reject noise, and retuned detection after lighting changes caused false positives.</li>
+            </ul>
+            <ul class="chips"><li>Python</li><li>OpenCV</li><li>Raspberry Pi</li><li>H-bridge</li><li>Ultrasonic sensors</li></ul>
+          </div>
+        </details>
+
+        <details class="panel proj exploring">
+          <summary>
+            <span class="proj-head">
+              <h3>Mapping a space while figuring out where you are in it</h3>
+              <span class="proj-meta"><span class="led planned"></span>SLAM and sensor fusion on a mobile manipulator · Currently exploring · C++</span>
+            </span>
+            <span class="proj-toggle" aria-hidden="true"></span>
+          </summary>
+          <div class="proj-body">
+            <p>Looking at getting graph-based SLAM running on a real mobile robot with a 2D lidar, an IMU, and onboard cameras, and adding the sensor fusion it needs to localize reliably.</p>
+            <ul class="chips"><li>GraphSLAM</li><li>2D lidar</li><li>IMU fusion</li><li>Raspberry Pi 5</li></ul>
+          </div>
+        </details>
+
+        <details class="panel proj">
+          <summary>
+            <span class="proj-head">
+              <h3>Spotting a failing sensor from inside the flight software</h3>
+              <span class="proj-meta"><span class="led"></span>IMU anomaly detector for ArduPilot · SITL simulation · C++, Python</span>
+            </span>
+            <span class="proj-toggle" aria-hidden="true"></span>
+          </summary>
+          <div class="proj-body">
+            <p>A KNN anomaly detector built into ArduPilot's inertial sensor driver and tested in its software-in-the-loop (SITL) simulator. It classifies accelerometer data in real time and alerts the ground station over MAVLink when vibration looks wrong.</p>
+            <div class="lead-grid">
+              <ul class="spec">
                 <li><span>Runs in</span><span>ArduPilot's inertial sensor driver, at the 400 Hz sensor rate, tested in SITL</span></li>
                 <li><span>Model</span><span>A 422-point reference model embedded in firmware, built from flight logs by a Python pipeline</span></li>
                 <li><span>Timing</span><span>Partial selection instead of a full sort, to fit inside the flight-control loop's time budget</span></li>
                 <li><span>Alerting</span><span>Warnings sent to the ground station over MAVLink</span></li>
                 <li><span>Tuning</span><span>Threshold set on held-out flight data, tested with injected vibration faults in SITL</span></li>
               </ul>
+              <div class="results" role="table" aria-label="Detector results">
+                <div class="results-row h" role="row"><span role="columnheader">Measure</span><span role="columnheader">Result</span></div>
+                <div class="results-row" role="row"><span role="cell">Classification rate</span><span class="num" role="cell">400 Hz</span></div>
+                <div class="results-row" role="row"><span role="cell">Normal readings kept under threshold</span><span class="num" role="cell">99%</span></div>
+                <div class="results-row" role="row"><span role="cell">Injected vibration fault samples flagged</span><span class="num" role="cell">54–80%</span></div>
+                <div class="results-row" role="row"><span role="cell">Reference points embedded in firmware</span><span class="num" role="cell">422</span></div>
+              </div>
             </div>
-            <div class="results" role="table" aria-label="Detector results">
-              <div class="results-row h" role="row"><span role="columnheader">Measure</span><span role="columnheader">Result</span></div>
-              <div class="results-row" role="row"><span role="cell">Classification rate</span><span class="num" role="cell">400 Hz</span></div>
-              <div class="results-row" role="row"><span role="cell">Normal readings kept under threshold</span><span class="num" role="cell">99%</span></div>
-              <div class="results-row" role="row"><span role="cell">Injected vibration fault samples flagged</span><span class="num" role="cell">54–80%</span></div>
-              <div class="results-row" role="row"><span role="cell">Reference points embedded in firmware</span><span class="num" role="cell">422</span></div>
-            </div>
+            <ul class="chips"><li>C++</li><li>Python</li><li>ArduPilot</li><li>SITL</li><li>MAVLink</li><li>KNN</li></ul>
           </div>
-        </article>
-
-        <article class="panel build half">
-          <div class="build-meta"><span class="state"><span class="led"></span>Complete</span><span>Python</span></div>
-          <h3>Autonomous navigation and multi-agent coordination</h3>
-          <div class="pair">
-            <div><b class="good">0.74 cm</b><span>final error with feedback heading control</span></div>
-            <div><b>9.3 cm</b><span>open-loop drift on the same robots</span></div>
-          </div>
-          <ul class="pts">
-            <li>State-machine waypoint navigation with feedback heading control on physical differential-drive robots.</li>
-            <li>Fixed failures that only showed up on hardware, a ~2 cm pose offset and ~0.4 s command lag, with latched states and predictive stopping.</li>
-            <li>Coordinated 3 robots simulating aircraft through constrained airspace with sequenced landings and holding patterns. A Python checker confirmed zero separation or speed violations across every logged run.</li>
-          </ul>
-          <ul class="chips"><li>Python</li><li>Feedback control</li><li>State machines</li><li>Multi-robot</li></ul>
-        </article>
-
-        <article class="panel build half">
-          <div class="build-meta"><span class="state"><span class="led"></span>Complete</span><span>Hardware · Python</span></div>
-          <h3>Vision-guided autonomous retrieval robot</h3>
-          <p>Designed, wired, and built a tracked robot from scratch: an ultrasonic sensor array, H-bridge motor control, a front camera, and a magnetic collector with switch-based pickup detection, all run from a Raspberry Pi.</p>
-          <ul class="pts">
-            <li>Navigated a maze by wall-following, found a colored target with OpenCV, collected it, and returned to the start.</li>
-            <li>Averaged 5 ultrasonic readings per measurement to reject noise, and retuned detection after lighting changes caused false positives.</li>
-          </ul>
-          <ul class="chips"><li>Python</li><li>OpenCV</li><li>Raspberry Pi</li><li>H-bridge</li><li>Ultrasonic sensors</li></ul>
-        </article>
-
-        <article class="panel build half">
-          <div class="build-meta"><span class="state"><span class="led"></span>Complete</span><span>Python</span></div>
-          <h3>Probabilistic robot localization and path planning</h3>
-          <p>Implemented extended Kalman filters and particle filters to localize and track autonomous agents from noisy sensor measurements, and built A* path planning for navigation.</p>
-          <ul class="chips"><li>Extended Kalman filter</li><li>Particle filter</li><li>A*</li><li>Python</li></ul>
-        </article>
-
-        <article class="panel build half exploring">
-          <div class="build-meta"><span class="state"><span class="led planned"></span>Currently exploring · C++ · Hardware</span></div>
-          <h3>SLAM and sensor fusion on a mobile manipulator</h3>
-          <p>Looking at getting graph-based SLAM running on a real mobile robot with a 2D lidar, an IMU, and onboard cameras, and adding the sensor fusion it needs to localize reliably.</p>
-          <ul class="chips"><li>GraphSLAM</li><li>2D lidar</li><li>IMU fusion</li><li>Raspberry Pi 5</li></ul>
-        </article>
+        </details>
       </div>
     </div>
   </section>
@@ -515,32 +591,6 @@ footer .rule { border-top: 1px solid var(--line); padding-top: 18px; width: 100%
           <span class="when">April 2020</span>
           <h3>Wayne State University</h3>
           <p>Bachelor of Science in Electrical Engineering</p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <section id="off">
-    <div class="wrap">
-      <div class="label">Off the bench</div>
-      <h2>Away from the keyboard</h2>
-      <div class="off-layout">
-        <figure class="panel photo">
-          <img src="assets/climbing.jpg" alt="Tyler climbing a granite sea cliff on a blue rope, red helmet on, with the ocean far below" width="900" height="1200" loading="lazy" decoding="async">
-        </figure>
-        <div class="off">
-          <article class="panel hobby">
-            <h3>Climbing</h3>
-            <p>Climbing is problem solving with your whole body.</p>
-          </article>
-          <article class="panel hobby">
-            <h3>Skiing</h3>
-            <p>From humble beginnings in Michigan, working my way up "real" mountains in the East. It's the reason to be excited for winter.</p>
-          </article>
-          <article class="panel hobby">
-            <h3>Sword fighting</h3>
-            <p>Still learning this one. Focusing on HEMA longsword. It's a surprisingly good workout. Like boxing, but from long range.</p>
-          </article>
         </div>
       </div>
     </div>
@@ -829,7 +879,7 @@ footer .rule { border-top: 1px solid var(--line); padding-top: 18px; width: 100%
     }
     function syncPred() {
       var on = lagOn && mode === 'fb';
-      predEl.disabled = !on; predL.classList.toggle('off', !on);
+      predEl.disabled = !on; predL.classList.toggle('is-off', !on);
     }
     bFb.addEventListener('click', function () { setMode('fb'); });
     bOl.addEventListener('click', function () { setMode('ol'); });
@@ -1043,6 +1093,9 @@ footer .rule { border-top: 1px solid var(--line); padding-top: 18px; width: 100%
   }
   PF.draw(); PF.ui(); NAV.ui();
   requestAnimationFrame(frame);
+  Array.prototype.forEach.call(document.querySelectorAll('[data-demo]'), function (a) {
+    a.addEventListener('click', function () { select(a.getAttribute('data-demo')); });
+  });
 
   // ======================= COPY EMAIL =======================
   var copyBtn = document.getElementById('copy-email');

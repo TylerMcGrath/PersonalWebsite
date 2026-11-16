@@ -43,7 +43,8 @@ If `index.html` ever stops being at the repo root, or a `package.json` with a bu
 5. **No placeholder text** on the live site. If a detail isn't known, write general copy or leave the item out.
 6. **The "Currently exploring" card stays general.** Don't name the company, product, or platform behind the SLAM work without Tyler's explicit OK.
 7. **Keep it one file** unless Tyler asks otherwise. No external JS libraries. The only external resource is Google Fonts.
-8. **Plain writing.** Short, direct sentences in the first person. No buzzwords, no "passionate about", and no self-ratings like "expert in".
+8. **The ArduPilot IMU detector ran only in SITL simulation.** Never imply physical drones, flight hardware, or a flight controller. It stays last in the project list and out of the hero.
+9. **Plain writing.** Short, direct sentences in the first person. No buzzwords, no "passionate about", and no self-ratings like "expert in".
 
 ## Site structure
 
@@ -53,7 +54,7 @@ Sections in page order, with their anchor ids:
 |---|---|---|
 | Header strip | n/a | Sticky. Name links to `#top`, nav links to each section |
 | Hero | `top` (on `<main>`) | Status pill, role line, headline, intro, 3-metric strip, tabbed demo panel (Navigation, Localization) |
-| Projects | `projects` | Lead card (ArduPilot IMU detector) plus half-width cards |
+| Projects | `projects` | Collapsible `<details>` panels. Each summary has a heading about the problem plus a meta line with the project name and stack. The first one is open by default |
 | Experience | `experience` | Continental AG (now Aumovio), three roles, newest first |
 | Skills and education | `skills` | Five skill groups from the resume, then Georgia Tech and Wayne State |
 | Off the bench | `off` | Climbing photo plus three hobby cards. The hobby copy is Tyler's own wording, so don't rewrite it |
@@ -64,7 +65,8 @@ Sections in page order, with their anchor ids:
 
 - **Education:** Georgia Tech MS in Computer Science, graduating Dec 2026, GPA 3.8. Wayne State B.S. Electrical Engineering, April 2020.
 - **Continental AG (now Aumovio):** Software Test Engineer, Sept 2024 – May 2026, Auburn Hills, MI. Associate Test Engineer, June 2021 – Sept 2024, Auburn Hills, MI. Electrical Engineering Intern, June 2018 – July 2019, Troy, MI.
-- **Hero metrics:** 400 Hz onboard detection, 0.74 cm navigation error, 4 days to 1 day test time.
+- **Hero metrics:** 0.74 cm navigation error, 0 separation violations across 3 coordinated robots, 4 days to 1 day test time.
+- **ArduPilot IMU detector:** SITL simulation only (see rule 8).
 - **Contact:** tylerjmcgrath@yahoo.com, github.com/TylerMcGrath, linkedin.com/in/tyler-mcgrath0
 
 When the resume changes, update the site to match and check every number against the new version.
@@ -79,27 +81,36 @@ The CSS opens with a token block on `:root`. Always use tokens and never hard-co
 - **Look:** an embedded engineer's bench. Instrument-style labels in uppercase mono, datasheet-like panels, tabular numbers. Keep new elements in that style.
 - **Status LEDs:** `.led` (green, complete), `.led.pending` (amber, in progress), `.led.planned` (grey, exploring or planned).
 
-### Adding a project card
+### Adding a project
 
-Copy this inside `<div class="builds">`. Use `half` for a half-width card, or `lead` for full width. Cards fill a 6-column grid, so keep half cards in pairs.
+Projects are `<details>` panels inside `<div class="projects">`, in this order: navigation, localization, SLAM (exploring), retrieval robot, IMU detector. Put a new one where it fits by strength, ahead of the IMU detector. The summary heading should name the problem the project is about, in Tyler's voice (for example "Getting a robot to stop exactly where you tell it to"). The project's formal name goes in the meta line.
 
 ```html
-<article class="panel build half">
-  <div class="build-meta"><span class="state"><span class="led"></span>Complete</span><span>Tech · Stack · Here</span></div>
-  <h3>Project name</h3>
-  <p>One or two sentences on what it is and what it does.</p>
-  <ul class="pts">
-    <li>A concrete result, with a real number if there is one.</li>
-  </ul>
-  <ul class="chips"><li>Tool</li><li>Tool</li></ul>
-</article>
+<details class="panel proj">
+  <summary>
+    <span class="proj-head">
+      <h3>The problem this project is about</h3>
+      <span class="proj-meta"><span class="led"></span>Formal project name · Context · Stack</span>
+    </span>
+    <span class="proj-toggle" aria-hidden="true"></span>
+  </summary>
+  <div class="proj-body">
+    <p>One or two sentences on what it is and what it does.</p>
+    <ul class="pts">
+      <li>A concrete result, with a real number if there is one.</li>
+    </ul>
+    <ul class="chips"><li>Tool</li><li>Tool</li></ul>
+  </div>
+</details>
 ```
 
-For a headline comparison (like 0.74 cm vs 9.3 cm), add a `.pair` block after the `<h3>`. Give the better number `class="good"`.
+- For a headline comparison (like 0.74 cm vs 9.3 cm), add a `.pair` block at the top of `.proj-body`. Give the better number `class="good"`.
+- For work in progress, add `exploring` to the class list and use `led planned`.
+- To link a project to a hero demo, add `<a class="demo-link" href="#top" data-demo="nav">` (or `"pf"`). Clicking it switches the hero tab.
 
 ## The hero demos
 
-The hero panel has two tabs. Both are browser simulations, labeled as simulations, and must stay labeled that way. Both arenas are 160 × 100 cm. Only the visible tab runs, to save CPU. The code is in the `<script>` at the bottom, in two modules: `NAV` and `PF`.
+The hero panel has two tabs, with Localization as the default. Both are browser simulations, labeled as simulations, and must stay labeled that way. Both arenas are 160 × 100 cm. Only the visible tab runs, to save CPU. The code is in the `<script>` at the bottom, in two modules: `NAV` and `PF`.
 
 ### Navigation tab (`NAV`, based on the Robotarium project)
 
@@ -123,7 +134,7 @@ The hero panel has two tabs. Both are browser simulations, labeled as simulation
 1. Open `index.html` in a browser and check for console errors.
 2. Check at desktop width and at about 400px wide. Nothing should scroll sideways.
 3. Check light and dark mode.
-4. Confirm both demo tabs animate, clicking the arena works, and every toggle and button does something.
+4. Confirm both demo tabs animate, clicking the arena works, and every toggle and button does something. Check that every project expands and collapses, and that the "Try the demo" links switch tabs.
 5. Confirm every link opens the right place and the resume PDF loads.
 6. Search for em dashes. `grep -nP '\x{2014}' index.html` should print nothing.
 7. Update the footer's "Last updated" month if content changed.
