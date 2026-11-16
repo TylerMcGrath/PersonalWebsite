@@ -6,7 +6,7 @@
 <title>Tyler McGrath</title>
 <meta name="description" content="Tyler McGrath, embedded software engineer: C/C++, CAN, real-time systems, and robotics. Based in New York City.">
 <meta property="og:title" content="Tyler McGrath · Embedded Software Engineer">
-<meta property="og:description" content="C/C++, CAN, real-time systems, and robotics. Onboard anomaly detection for flight firmware, autonomous robot navigation, and five years of automotive embedded work.">
+<meta property="og:description" content="C/C++, CAN, real-time systems, and robotics. Onboard anomaly detection for flight firmware, autonomous robot navigation, and five years of automotive embedded work. Try the live robot navigation and localization demos.">
 <meta property="og:type" content="website">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -23,7 +23,7 @@
   --trace: #0D7880;
   --ok: #2B7F51;
   --planned: #8A9795;
-  --fault-bg: rgba(168, 95, 0, 0.12);
+  --floor: #EEF2F1;
   --display: "Barlow Condensed", "Arial Narrow", "Roboto Condensed", sans-serif;
   --body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
   --mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
@@ -32,15 +32,13 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --mat: #111716; --panel: #1A2221; --ink: #E2E9E7; --muted: #94A4A1; --line: #2F3B39;
-    --accent: #F0A440; --trace: #52C6CE; --ok: #62C98C; --planned: #66746F;
-    --fault-bg: rgba(240, 164, 64, 0.16);
+    --accent: #F0A440; --trace: #52C6CE; --ok: #62C98C; --planned: #66746F; --floor: #151C1B;
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
   --mat: #111716; --panel: #1A2221; --ink: #E2E9E7; --muted: #94A4A1; --line: #2F3B39;
-  --accent: #F0A440; --trace: #52C6CE; --ok: #62C98C; --planned: #66746F;
-  --fault-bg: rgba(240, 164, 64, 0.16);
+  --accent: #F0A440; --trace: #52C6CE; --ok: #62C98C; --planned: #66746F; --floor: #151C1B;
   color-scheme: dark;
 }
 
@@ -143,25 +141,37 @@ h1 .hl { color: var(--accent); }
 .scope-title { font-family: var(--display); font-size: 1.15rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; }
 .scope-tag { font-family: var(--mono); font-size: 0.7rem; color: var(--muted); }
 .screen { border: 1px solid var(--line); border-radius: 4px; overflow: hidden; background: var(--mat); }
-.screen canvas { display: block; width: 100%; height: 240px; }
+.screen canvas { display: block; width: 100%; aspect-ratio: 16 / 10.4; max-width: 100%; cursor: crosshair; touch-action: manipulation; }
+.tabs { display: flex; border: 1px solid var(--line); border-radius: 4px; overflow: hidden; align-self: flex-start; }
+.tabs button { font-family: var(--mono); font-size: 0.74rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; background: transparent; color: var(--muted); border: 0; padding: 8px 14px; cursor: pointer; }
+.tabs button + button { border-left: 1px solid var(--line); }
+.tabs button[aria-selected="true"] { background: var(--ink); color: var(--panel); }
+.tabs button:hover:not([aria-selected="true"]) { color: var(--ink); }
+.demo { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.readouts b.good { color: var(--trace); }
+.readouts b.bad { color: var(--accent); }
+.controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 4px; overflow: hidden; }
+.seg button { font-family: var(--mono); font-size: 0.74rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; background: transparent; color: var(--muted); border: 0; padding: 9px 12px; cursor: pointer; }
+.seg button + button { border-left: 1px solid var(--line); }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--panel); }
+.chk { display: inline-flex; align-items: center; gap: 7px; font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink); padding: 8px 10px; border: 1px solid var(--line); border-radius: 4px; cursor: pointer; user-select: none; }
+.chk input { accent-color: var(--trace); margin: 0; }
+.chk.off { opacity: 0.45; cursor: default; }
+.legend { display: flex; flex-wrap: wrap; gap: 14px; font-family: var(--mono); font-size: 0.68rem; color: var(--muted); letter-spacing: 0.04em; }
+.legend i { display: inline-block; width: 10px; height: 10px; margin-right: 6px; vertical-align: -1px; border-radius: 50%; }
+.legend i.robot { background: var(--ink); }
+.legend i.est { border: 2px solid var(--accent); }
+.legend i.pt { background: var(--trace); width: 6px; height: 6px; vertical-align: 1px; }
+.legend i.lm { background: var(--panel); border: 1.5px solid var(--ink); border-radius: 1px; transform: rotate(45deg); width: 8px; height: 8px; }
+.legend i.fb, .legend i.ol { border-radius: 2px; height: 3px; vertical-align: 3px; width: 14px; }
+.legend i.fb { background: var(--trace); }
+.legend i.ol { background: var(--accent); }
+
 .readouts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; font-family: var(--mono); font-size: 0.75rem; font-variant-numeric: tabular-nums; }
 .readouts div { border: 1px solid var(--line); border-radius: 4px; padding: 6px 8px; min-width: 0; }
 .readouts span { display: block; color: var(--muted); font-size: 0.65rem; letter-spacing: 0.08em; text-transform: uppercase; }
 .readouts b { font-weight: 600; font-size: 0.95rem; }
-#r-state.alert { color: var(--accent); }
-.gcs {
-  font-family: var(--mono); font-size: 0.72rem; line-height: 1.55; font-variant-numeric: tabular-nums;
-  border: 1px solid var(--line); border-radius: 4px; padding: 8px 10px; min-height: 6.4em;
-  margin: 0; list-style: none; overflow-x: auto; white-space: nowrap;
-}
-.gcs li { color: var(--muted); }
-.gcs li.warn { color: var(--accent); }
-.gcs li.sim { color: var(--trace); }
-.gcs .gcs-h { color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; font-size: 0.62rem; }
-.controls { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 12px; align-items: end; }
-.knob label { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 0.7rem; color: var(--muted); letter-spacing: 0.06em; text-transform: uppercase; }
-.knob output { color: var(--ink); font-variant-numeric: tabular-nums; }
-input[type=range] { width: 100%; accent-color: var(--trace); margin: 6px 0 0; }
 .btn {
   font-family: var(--mono); font-size: 0.78rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase;
   background: var(--ink); color: var(--panel); border: 0; border-radius: 4px; padding: 10px 14px; cursor: pointer; white-space: nowrap;
@@ -228,7 +238,10 @@ input[type=range] { width: 100%; accent-color: var(--trace); margin: 6px 0 0; }
 .school .gpa { font-family: var(--mono); font-size: 0.8rem; }
 
 /* Off the bench */
-.off { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-top: 28px; }
+.off-layout { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 16px; margin-top: 28px; align-items: stretch; }
+.photo { margin: 0; overflow: hidden; min-height: 320px; padding: 0; position: relative; }
+.photo img { position: absolute; inset: 0; display: block; width: 100%; height: 100%; object-fit: cover; object-position: 45% 64%; }
+.off { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; align-content: start; }
 .hobby { padding: 20px 22px; display: grid; gap: 8px; align-content: start; min-width: 0; }
 .hobby p { margin: 0; font-size: 0.95rem; color: var(--muted); }
 
@@ -252,16 +265,17 @@ footer .rule { border-top: 1px solid var(--line); padding-top: 18px; width: 100%
 @media (max-width: 900px) {
   .hero-grid, .lead-grid, .contact { grid-template-columns: minmax(0, 1fr); }
   .build.half { grid-column: span 6; }
-  .off, .edu { grid-template-columns: minmax(0, 1fr); }
+  .off-layout, .edu { grid-template-columns: minmax(0, 1fr); }
+  .photo { min-height: 0; aspect-ratio: 4 / 3; max-width: 100%; }
   .exp-role { grid-template-columns: minmax(0, 1fr); gap: 8px; }
   .exp-when { grid-auto-flow: column; justify-content: start; gap: 14px; }
 }
 @media (max-width: 640px) {
+  .readouts { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .readouts div:last-child { grid-column: span 2; }
   .brand { font-size: 1.05rem; }
   .metrics { grid-template-columns: minmax(0, 1fr); }
   .metrics div { grid-template-columns: 6.2em minmax(0, 1fr); align-items: center; gap: 12px; }
-  .controls { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
-  .controls .knob { grid-column: span 2; }
   .spec li { grid-template-columns: minmax(0, 1fr); gap: 0; }
   .skill-row { grid-template-columns: minmax(0, 1fr); gap: 6px; padding: 14px 18px; }
   .links li { grid-template-columns: minmax(0, 1fr) auto; }
@@ -270,7 +284,6 @@ footer .rule { border-top: 1px solid var(--line); padding-top: 18px; width: 100%
   .build { padding: 18px; }
   .exp-role, .exp-co { padding-inline: 18px; }
   .exp-when { grid-auto-flow: row; }
-  .screen canvas { height: 220px; }
 }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
@@ -297,7 +310,7 @@ footer .rule { border-top: 1px solid var(--line); padding-top: 18px; width: 100%
     <div class="wrap hero-grid">
       <div>
         <span class="status"><span class="led"></span>Open to embedded and robotics roles · New York City</span>
-        <p class="role">Embedded software engineer · C/C++ · CAN · real-time · robotics</p>
+        <p class="role">Embedded software engineer · C/C++ · PYTHON · CAN · robotics</p>
         <h1>Embedded software for <span class="hl">machines that move.</span></h1>
         <p class="intro">I write code that runs close to the hardware: CAN tooling for automotive electronics, a sensor-driver classifier inside drone flight firmware, and control code for physical robots. I spent five years at Continental and I'm finishing an MS in Computer Science at Georgia Tech in December 2026.</p>
         <div class="metrics">
@@ -307,31 +320,53 @@ footer .rule { border-top: 1px solid var(--line); padding-top: 18px; width: 100%
         </div>
       </div>
 
-      <div class="panel scope" aria-label="IMU anomaly detector simulation">
-        <div class="scope-head">
-          <span class="scope-title">IMU anomaly detector · accel Z</span>
-          <span class="scope-tag">KNN · 400 Hz · simulated</span>
+      <div class="panel scope" aria-label="Interactive robotics demos">
+        <div class="tabs" role="tablist" aria-label="Choose a demo">
+          <button type="button" role="tab" id="tab-nav" aria-controls="demo-nav" aria-selected="false" tabindex="-1">Navigation</button> 
+          <button type="button" role="tab" id="tab-pf" aria-controls="demo-pf" aria-selected="true" >Localization</button>
         </div>
-        <div class="screen">
-          <canvas id="scope" role="img" aria-label="Live plot of simulated accelerometer readings with the anomaly score and detection threshold below"></canvas>
-        </div>
-        <div class="readouts">
-          <div><span>Accel Z</span><b id="r-acc">9.81</b></div>
-          <div><span>Score / limit</span><b id="r-score">0.0</b></div>
-          <div><span>Status</span><b id="r-state">Nominal</b></div>
-        </div>
-        <ul class="gcs" id="gcs" aria-live="polite" aria-label="Ground station messages">
-          <li class="gcs-h">Ground station</li>
-        </ul>
-        <div class="controls">
-          <div class="knob">
-            <label for="strength">Fault strength <output id="strength-out" for="strength">3</output></label>
-            <input type="range" id="strength" min="1" max="10" step="1" value="3">
+
+        <div class="demo" id="demo-nav" role="tabpanel" aria-labelledby="tab-nav" hidden>
+          <div class="scope-head">
+            <span class="scope-title">Waypoint navigation</span>
+            <span class="scope-tag">diff drive · state machine · simulated</span>
           </div>
-          <button class="btn" id="inject" type="button">Inject vibration fault</button>
-          <button class="btn ghost" id="clear" type="button">Clear log</button>
+          <div class="screen"><canvas id="nav" role="img" aria-label="Top-down arena with a robot driving between waypoints. Click to add waypoints."></canvas></div>
+          <div class="readouts">
+            <div><span>Last stop error</span><b id="n-last">–</b></div>
+            <div><span>Avg of last 4</span><b id="n-avg">–</b></div>
+            <div><span>Controller</span><b id="n-state">Idle</b></div>
+          </div>
+          <div class="controls">
+            <div class="seg" role="group" aria-label="Control mode">
+              <button type="button" id="m-fb" aria-pressed="true">Feedback</button>
+              <button type="button" id="m-ol" aria-pressed="false">Open loop</button>
+            </div>
+            <label class="chk" for="lag"><input type="checkbox" id="lag">0.4 s command lag</label>
+            <label class="chk off" for="pred" id="pred-l"><input type="checkbox" id="pred" checked disabled>Predictive stopping</label>
+          </div>
+          <div class="legend"><span><i class="fb"></i>feedback path</span><span><i class="ol"></i>open-loop path</span><span>rings show stop error</span></div>
+          <p class="scope-note">Click the arena to add waypoints. The wheels are slightly mismatched, like real hardware. Feedback control corrects for it and open loop can't, so open-loop errors pile up from leg to leg. A simulation based on my Robotarium project.</p>
         </div>
-        <p class="scope-note">A browser model of how the detector works. Each window of accelerometer samples is compared against a 422-point reference of normal flight, and a high nearest-neighbor score means the window looks unlike anything normal. Shaded regions show when a fault is really present. Weak faults can slip under the threshold, which is the cost of keeping false alarms near 1%.</p>
+
+        <div class="demo" id="demo-pf" role="tabpanel" aria-labelledby="tab-pf">
+          <div class="scope-head">
+            <span class="scope-title">Monte Carlo localization</span>
+            <span class="scope-tag">300 particles · range sensor · simulated</span>
+          </div>
+          <div class="screen"><canvas id="pf" role="img" aria-label="Map with landmarks, a robot, and a cloud of particles estimating its position. Click to move the robot."></canvas></div>
+          <div class="readouts">
+            <div><span>Estimate error</span><b id="p-err">–</b></div>
+            <div><span>Effective particles</span><b id="p-neff">–</b></div>
+            <div><span>Landmarks in view</span><b id="p-lm">–</b></div>
+          </div>
+          <div class="controls">
+            <button class="btn" type="button" id="kidnap">Kidnap robot</button>
+            <button class="btn ghost" type="button" id="scatter">Scatter particles</button>
+          </div>
+          <div class="legend"><span><i class="robot"></i>true position</span><span><i class="est"></i>estimate</span><span><i class="pt"></i>particles</span><span><i class="lm"></i>landmarks</span></div>
+          <p class="scope-note">The robot starts with no idea where it is. It senses landmarks within 60 cm through noisy range readings, and 300 particles narrow down its position. Click the map to move the robot and watch the filter recover. A simulation based on my localization project.</p>
+        </div>
       </div>
     </div>
   </section>
@@ -367,7 +402,7 @@ footer .rule { border-top: 1px solid var(--line); padding-top: 18px; width: 100%
         </article>
 
         <article class="panel build half">
-          <div class="build-meta"><span class="state"><span class="led"></span>Complete</span><span>Georgia Tech Robotarium</span></div>
+          <div class="build-meta"><span class="state"><span class="led"></span>Complete</span><span>Python</span></div>
           <h3>Autonomous navigation and multi-agent coordination</h3>
           <div class="pair">
             <div><b class="good">0.74 cm</b><span>final error with feedback heading control</span></div>
@@ -382,7 +417,7 @@ footer .rule { border-top: 1px solid var(--line); padding-top: 18px; width: 100%
         </article>
 
         <article class="panel build half">
-          <div class="build-meta"><span class="state"><span class="led"></span>Complete</span><span>Undergrad capstone</span></div>
+          <div class="build-meta"><span class="state"><span class="led"></span>Complete</span><span>Hardware · Python</span></div>
           <h3>Vision-guided autonomous retrieval robot</h3>
           <p>Designed, wired, and built a tracked robot from scratch: an ultrasonic sensor array, H-bridge motor control, a front camera, and a magnetic collector with switch-based pickup detection, all run from a Raspberry Pi.</p>
           <ul class="pts">
@@ -400,7 +435,7 @@ footer .rule { border-top: 1px solid var(--line); padding-top: 18px; width: 100%
         </article>
 
         <article class="panel build half exploring">
-          <div class="build-meta"><span class="state"><span class="led planned"></span>Currently exploring</span></div>
+          <div class="build-meta"><span class="state"><span class="led planned"></span>Currently exploring · C++ · Hardware</span></div>
           <h3>SLAM and sensor fusion on a mobile manipulator</h3>
           <p>Looking at getting graph-based SLAM running on a real mobile robot with a 2D lidar, an IMU, and onboard cameras, and adding the sensor fusion it needs to localize reliably.</p>
           <ul class="chips"><li>GraphSLAM</li><li>2D lidar</li><li>IMU fusion</li><li>Raspberry Pi 5</li></ul>
@@ -490,19 +525,24 @@ footer .rule { border-top: 1px solid var(--line); padding-top: 18px; width: 100%
     <div class="wrap">
       <div class="label">Off the bench</div>
       <h2>Away from the keyboard</h2>
-      <div class="off">
-        <article class="panel hobby">
-          <h3>Climbing</h3>
-          <p>Climbing is problem solving with your whole body. Read the route, commit to a sequence, fall, adjust, and try again.</p>
-        </article>
-        <article class="panel hobby">
-          <h3>Skiing</h3>
-          <p>Winters go to the mountains. It's the best reason I know to be up before sunrise on a Saturday.</p>
-        </article>
-        <article class="panel hobby">
-          <h3>Sword fighting</h3>
-          <p>Timing, distance, and reacting faster than the other person. It's a closed control loop with a lot more adrenaline.</p>
-        </article>
+      <div class="off-layout">
+        <figure class="panel photo">
+          <img src="assets/climbing.jpg" alt="Tyler climbing a granite sea cliff on a blue rope, red helmet on, with the ocean far below" width="900" height="1200" loading="lazy" decoding="async">
+        </figure>
+        <div class="off">
+          <article class="panel hobby">
+            <h3>Climbing</h3>
+            <p>Climbing is problem solving with your whole body.</p>
+          </article>
+          <article class="panel hobby">
+            <h3>Skiing</h3>
+            <p>From humble beginnings in Michigan, working my way up "real" mountains in the East. It's the reason to be excited for winter.</p>
+          </article>
+          <article class="panel hobby">
+            <h3>Sword fighting</h3>
+            <p>Still learning this one. Focusing on HEMA longsword. It's a surprisingly good workout. Like boxing, but from long range.</p>
+          </article>
+        </div>
       </div>
     </div>
   </section>
@@ -534,273 +574,478 @@ footer .rule { border-top: 1px solid var(--line); padding-top: 18px; width: 100%
 
 <script>
 (function () {
-  // ---------- IMU anomaly detector model ----------
-  var FS = 400, WIN = 32, HOP = 8, K = 3, REF_N = 422;
-  var G = 9.81;
-
-  function gauss() {
-    var u = 1 - Math.random(), v = Math.random();
-    return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
-  }
-
-  // Simulated accelerometer: gravity, slow flight motion, sensor noise, optional vibration fault
-  function Gen() {
-    this.n = 0;
-    this.p = [Math.random() * 6.28, Math.random() * 6.28, Math.random() * 6.28];
-    this.fault = 0; this.faultLeft = 0; this.vibPhase = 0;
-  }
-  Gen.prototype.sample = function () {
-    var t = this.n / FS; this.n++;
-    var a = G
-      + 0.45 * Math.sin(2 * Math.PI * 0.35 * t + this.p[0])
-      + 0.25 * Math.sin(2 * Math.PI * 1.1 * t + this.p[1])
-      + 0.12 * Math.sin(2 * Math.PI * 2.7 * t + this.p[2])
-      + 0.09 * gauss();
-    var active = false;
-    if (this.faultLeft > 0) {
-      this.faultLeft--;
-      active = true;
-      var env = 0.35 + 0.65 * Math.abs(Math.sin(2 * Math.PI * 1.4 * t));
-      this.vibPhase += 2 * Math.PI * (68 + 6 * Math.sin(t * 3)) / FS;
-      a += this.fault * env * Math.sin(this.vibPhase) + this.fault * 0.15 * gauss();
-    }
-    return { a: a, f: active };
-  };
-
-  // Window features: standard deviation and mean absolute sample-to-sample change
-  function FX() { this.ring = new Float32Array(WIN); this.i = 0; this.count = 0; }
-  FX.prototype.push = function (a) { this.ring[this.i] = a; this.i = (this.i + 1) % WIN; this.count++; };
-  FX.prototype.features = function () {
-    var r = this.ring, m = 0, j;
-    for (j = 0; j < WIN; j++) m += r[j];
-    m /= WIN;
-    var v = 0, d = 0;
-    for (j = 0; j < WIN; j++) {
-      var x = r[(this.i + j) % WIN];
-      v += (x - m) * (x - m);
-      if (j > 0) d += Math.abs(x - r[(this.i + j - 1) % WIN]);
-    }
-    return [Math.sqrt(v / WIN), d / (WIN - 1)];
-  };
-
-  function collect(nDecisions) {
-    var g = new Gen(), fx = new FX(), out = [];
-    for (var s = 0; s < WIN; s++) fx.push(g.sample().a);
-    for (var k = 0; k < nDecisions; k++) {
-      for (var h = 0; h < HOP; h++) fx.push(g.sample().a);
-      out.push(fx.features());
-    }
-    return out;
-  }
-
-  // Build the 422-point reference model from "flight logs", z-score normalized
-  var raw = collect(REF_N * 4).filter(function (_, i) { return i % 4 === 0; }).slice(0, REF_N);
-  var mu = [0, 0], sd = [0, 0];
-  raw.forEach(function (f) { mu[0] += f[0]; mu[1] += f[1]; });
-  mu[0] /= raw.length; mu[1] /= raw.length;
-  raw.forEach(function (f) { sd[0] += (f[0] - mu[0]) * (f[0] - mu[0]); sd[1] += (f[1] - mu[1]) * (f[1] - mu[1]); });
-  sd[0] = Math.sqrt(sd[0] / raw.length) || 1; sd[1] = Math.sqrt(sd[1] / raw.length) || 1;
-  var REF = raw.map(function (f) { return [(f[0] - mu[0]) / sd[0], (f[1] - mu[1]) / sd[1]]; });
-
-  // KNN score with partial selection of the K nearest
-  function score(f) {
-    var x = (f[0] - mu[0]) / sd[0], y = (f[1] - mu[1]) / sd[1];
-    var best = [Infinity, Infinity, Infinity];
-    for (var i = 0; i < REF.length; i++) {
-      var dx = REF[i][0] - x, dy = REF[i][1] - y, d = dx * dx + dy * dy;
-      if (d < best[K - 1]) {
-        var j = K - 1;
-        while (j > 0 && best[j - 1] > d) { best[j] = best[j - 1]; j--; }
-        best[j] = d;
-      }
-    }
-    return (Math.sqrt(best[0]) + Math.sqrt(best[1]) + Math.sqrt(best[2])) / K;
-  }
-
-  // Threshold at the 99th percentile of held-out normal data
-  var held = collect(3000).map(score).sort(function (a, b) { return a - b; });
-  var THRESH = held[Math.floor(held.length * 0.99)];
-  var SMAX = THRESH * 4;
-
-  // ---------- Live state ----------
-  var gen = new Gen(), fx = new FX();
-  var SPAN = 800; // 2 s of samples
-  var acc = new Float32Array(SPAN), truth = new Uint8Array(SPAN), head = 0;
-  var DSPAN = SPAN / HOP;
-  var sc = new Float32Array(DSPAN), flag = new Uint8Array(DSPAN), dhead = 0;
-  var sinceHop = 0, streakHi = 0, streakLo = 0, alert = false, lastScore = 0, lastAcc = G;
-  var elapsed = 0;
-
-  var strengthIn = document.getElementById('strength');
-  var strengthOut = document.getElementById('strength-out');
-  var gcs = document.getElementById('gcs');
-  var rAcc = document.getElementById('r-acc'), rScore = document.getElementById('r-score'), rState = document.getElementById('r-state');
+  var AW = 160, AH = 100;
   var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-  function stamp() { return 'T+' + (elapsed).toFixed(2).padStart(7, '0') + 's'; }
-  function log(text, cls) {
-    var li = document.createElement('li');
-    li.textContent = stamp() + '  ' + text;
-    if (cls) li.className = cls;
-    gcs.appendChild(li);
-    var items = gcs.querySelectorAll('li:not(.gcs-h)');
-    for (var i = 0; i < items.length - 4; i++) items[i].remove();
-  }
-  function amp() { var s = +strengthIn.value; return 0.06 * Math.pow(s, 1.35); }
-  function inject() {
-    gen.fault = amp();
-    gen.faultLeft = Math.round(FS * 1.6);
-    log('SIM  vibration fault injected, strength ' + strengthIn.value, 'sim');
-  }
-
-  function step() {
-    var s = gen.sample();
-    elapsed += 1 / FS;
-    fx.push(s.a);
-    acc[head] = s.a; truth[head] = s.f ? 1 : 0; head = (head + 1) % SPAN;
-    lastAcc = s.a;
-    if (++sinceHop >= HOP) {
-      sinceHop = 0;
-      var v = score(fx.features());
-      lastScore = v;
-      var hi = v > THRESH;
-      sc[dhead] = v; flag[dhead] = hi ? 1 : 0; dhead = (dhead + 1) % DSPAN;
-      if (hi) { streakHi++; streakLo = 0; } else { streakLo++; streakHi = 0; }
-      if (!alert && streakHi >= 3) {
-        alert = true;
-        log('STATUSTEXT WARNING  IMU0 vibration anomaly, score ' + v.toFixed(1), 'warn');
-      } else if (alert && streakLo >= 25) {
-        alert = false;
-        log('STATUSTEXT INFO  IMU0 nominal');
-      }
-    }
-  }
-
-  // ---------- Drawing ----------
-  var cv = document.getElementById('scope'), ctx = cv.getContext('2d');
   function tok(n) { return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
-  function size() {
+  function gauss() { var u = 1 - Math.random(), v = Math.random(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); }
+  function wrap(a) { return Math.atan2(Math.sin(a), Math.cos(a)); }
+  function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+  function fit(cv) {
     var dpr = Math.min(window.devicePixelRatio || 1, 2), r = cv.getBoundingClientRect();
     var w = Math.max(1, Math.round(r.width * dpr)), h = Math.max(1, Math.round(r.height * dpr));
     if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h; }
     return dpr;
   }
-
-  function draw() {
-    var dpr = size(), W = cv.width, H = cv.height;
-    var line = tok('--line'), muted = tok('--muted'), tr = tok('--trace'), ac = tok('--accent'), fbg = tok('--fault-bg');
-    ctx.clearRect(0, 0, W, H);
+  function xf(cv, dpr) {
+    var pad = 12 * dpr, s = Math.min((cv.width - 2 * pad) / AW, (cv.height - 2 * pad) / AH);
+    var ox = (cv.width - AW * s) / 2, oy = (cv.height - AH * s) / 2;
+    return { s: s, X: function (x) { return ox + x * s; }, Y: function (y) { return oy + y * s; },
+      inv: function (px, py) { return [(px - ox) / s, (py - oy) / s]; } };
+  }
+  function colors() {
+    return { ink: tok('--ink'), muted: tok('--muted'), line: tok('--line'), accent: tok('--accent'),
+      trace: tok('--trace'), panel: tok('--panel'), floor: tok('--floor') };
+  }
+  function arena(ctx, T, dpr, c) {
+    ctx.fillStyle = c.floor;
+    ctx.fillRect(T.X(0), T.Y(0), AW * T.s, AH * T.s);
+    ctx.strokeStyle = c.line; ctx.lineWidth = 1 * dpr;
+    ctx.globalAlpha = 0.7;
+    for (var x = 20; x < AW; x += 20) { ctx.beginPath(); ctx.moveTo(T.X(x), T.Y(0)); ctx.lineTo(T.X(x), T.Y(AH)); ctx.stroke(); }
+    for (var y = 20; y < AH; y += 20) { ctx.beginPath(); ctx.moveTo(T.X(0), T.Y(y)); ctx.lineTo(T.X(AW), T.Y(y)); ctx.stroke(); }
+    ctx.globalAlpha = 1;
+    ctx.lineWidth = 1.5 * dpr; ctx.strokeRect(T.X(0), T.Y(0), AW * T.s, AH * T.s);
+    // scale bar
+    ctx.fillStyle = c.muted; ctx.strokeStyle = c.muted; ctx.lineWidth = 1.5 * dpr;
+    var bx = T.X(4), by = T.Y(AH - 4);
+    ctx.beginPath(); ctx.moveTo(bx, by); ctx.lineTo(bx + 20 * T.s, by); ctx.stroke();
     ctx.font = (10 * dpr) + 'px "JetBrains Mono", ui-monospace, monospace';
-    var padL = 38 * dpr, padR = 10 * dpr, padT = 10 * dpr, gap = 22 * dpr, padB = 18 * dpr;
-    var pw = W - padL - padR;
-    var h1 = (H - padT - gap - padB) * 0.58, h2 = (H - padT - gap - padB) - h1;
-    var top1 = padT, top2 = padT + h1 + gap;
-    var AMIN = 7, AMAX = 12.6;
-    function ya(v) { v = Math.max(AMIN, Math.min(AMAX, v)); return top1 + h1 - (v - AMIN) / (AMAX - AMIN) * h1; }
-    function ys(v) { v = Math.max(0, Math.min(SMAX, v)); return top2 + h2 - (v / SMAX) * h2; }
-    function xs(i, n) { return padL + pw * (i / (n - 1)); }
+    ctx.textAlign = 'left'; ctx.textBaseline = 'bottom';
+    ctx.fillText('20 cm', bx, by - 3 * dpr);
+  }
+  function pointer(cv, e) {
+    var r = cv.getBoundingClientRect(), dpr = Math.min(window.devicePixelRatio || 1, 2);
+    var T = xf(cv, dpr);
+    return T.inv((e.clientX - r.left) * dpr, (e.clientY - r.top) * dpr);
+  }
 
-    // fault ground-truth shading
-    ctx.fillStyle = fbg;
-    var runStart = -1;
-    for (var i = 0; i <= SPAN; i++) {
-      var on = i < SPAN && truth[(head + i) % SPAN];
-      if (on && runStart < 0) runStart = i;
-      if (!on && runStart >= 0) {
-        var x0 = xs(runStart, SPAN), x1 = xs(i - 1, SPAN);
-        ctx.fillRect(x0, top1, Math.max(1, x1 - x0), h1);
-        ctx.fillRect(x0, top2, Math.max(1, x1 - x0), h2);
-        runStart = -1;
+  // ======================= OPTION 1: NAVIGATION =======================
+  var NAV = (function () {
+    var cv = document.getElementById('nav'), ctx = cv.getContext('2d');
+    var V = 16, W = 2.2, LAG = 0.4, DT = 1 / 120, R_BODY = 4.5;
+    var mode = 'fb', lagOn = false, predOn = true;
+    var r = { x: 25, y: 25, th: 0 };
+    var hw = { vs: 0, ws: 0, k: 0 };
+    var tour = [[130, 25], [135, 75], [40, 80], [25, 25]], tourIdx = 0;
+    var userQ = [], usingUser = false;
+    var target = null, state = 'IDLE', stateT = 0, idleT = 3.2, rehomeAfter = false;
+    var cmdQ = [], now = 0, trail = [], trailTick = 0, errs = [], marks = [];
+    var belief = { x: 25, y: 25, th: 0 }, olPlan = [];
+
+    function newHw() {
+      hw = { vs: (Math.random() * 2 - 1) * 0.03, ws: (Math.random() * 2 - 1) * 0.05,
+        k: (Math.random() < 0.5 ? -1 : 1) * (0.0008 + Math.random() * 0.0012) };
+    }
+    function startLeg(t) {
+      target = { x: t[0], y: t[1] };
+      newHw();
+      stateT = 0;
+      if (mode === 'fb') { state = 'ROTATE'; }
+      else {
+        var ang = wrap(Math.atan2(target.y - belief.y, target.x - belief.x) - belief.th);
+        var dist = Math.hypot(target.x - belief.x, target.y - belief.y);
+        olPlan = [{ v: 0, w: Math.sign(ang) * W, t: Math.abs(ang) / W }, { v: V, w: 0, t: dist / V }];
+        belief = { x: target.x, y: target.y, th: belief.th + ang };
+        state = 'OL';
       }
     }
+    function nextTarget() {
+      if (userQ.length) { usingUser = true; startLeg(userQ.shift()); return; }
+      if (usingUser) { usingUser = false; state = 'IDLE'; idleT = 0; target = null; return; }
+      var t = tour[tourIdx];
+      tourIdx = (tourIdx + 1) % tour.length;
+      rehomeAfter = (mode === 'ol' && tourIdx === 0);
+      startLeg(t);
+    }
+    function predicted(p) {
+      var q = { x: p.x, y: p.y, th: p.th }, cut = now - LAG;
+      for (var i = 0; i < cmdQ.length; i++) {
+        var c = cmdQ[i];
+        if (c.t <= cut) continue;
+        q.x += c.v * Math.cos(q.th) * DT; q.y += c.v * Math.sin(q.th) * DT; q.th += c.w * DT;
+      }
+      return q;
+    }
+    function control() {
+      if (state === 'IDLE') {
+        idleT += DT;
+        if (userQ.length) nextTarget();
+        else if (idleT > 4) nextTarget();
+        return { v: 0, w: 0 };
+      }
+      if (state === 'OL') {
+        stateT += DT;
+        var acc = 0;
+        for (var i = 0; i < olPlan.length; i++) {
+          acc += olPlan[i].t;
+          if (stateT < acc) return { v: olPlan[i].v, w: olPlan[i].w };
+        }
+        state = 'SETTLE'; stateT = 0;
+        return { v: 0, w: 0 };
+      }
+      if (state === 'SETTLE') {
+        stateT += DT;
+        if (stateT > (lagOn ? LAG + 0.35 : 0.35)) {
+          var e = Math.hypot(r.x - target.x, r.y - target.y);
+          errs.push(e); if (errs.length > 4) errs.shift();
+          marks.push({ x: target.x, y: target.y, e: e, m: mode }); if (marks.length > 5) marks.shift();
+          state = 'ARRIVED'; stateT = 0;
+        }
+        return { v: 0, w: 0 };
+      }
+      if (state === 'ARRIVED') {
+        stateT += DT;
+        if (stateT > 0.6) {
+          if (rehomeAfter) {
+            rehomeAfter = false;
+            r = { x: 25, y: 25, th: 0 }; belief = { x: 25, y: 25, th: 0 }; trail = []; cmdQ = [];
+          }
+          nextTarget();
+        }
+        return { v: 0, w: 0 };
+      }
+      // feedback modes use an overhead-tracker pose, optionally projected through the lag
+      var meas = { x: r.x + gauss() * 0.12, y: r.y + gauss() * 0.12, th: r.th + gauss() * 0.004 };
+      var p = (lagOn && predOn) ? predicted(meas) : meas;
+      var dx = target.x - p.x, dy = target.y - p.y, d = Math.hypot(dx, dy);
+      var e2 = wrap(Math.atan2(dy, dx) - p.th);
+      if (state === 'ROTATE') {
+        if (Math.abs(e2) < 0.035) { state = 'DRIVE'; stateT = 0; return { v: 0, w: 0 }; }
+        return { v: 0, w: Math.sign(e2) * Math.max(0.25, Math.min(W, 2.5 * Math.abs(e2))) };
+      }
+      if (state === 'DRIVE') {
+        if (d < 0.6 || (d < 4 && Math.cos(e2) < 0)) { state = 'SETTLE'; stateT = 0; return { v: 0, w: 0 }; }
+        var v = Math.min(V, 1.2 + 1.4 * d) * Math.max(0, Math.cos(e2));
+        return { v: v, w: clamp(3 * e2, -W, W) };
+      }
+      return { v: 0, w: 0 };
+    }
+    function physics(c) {
+      now += DT;
+      cmdQ.push({ t: now, v: c.v, w: c.w });
+      var a;
+      if (lagOn) {
+        var cut = now - LAG;
+        while (cmdQ.length > 1 && cmdQ[1].t <= cut) cmdQ.shift();
+        a = cmdQ[0].t <= cut ? cmdQ[0] : { v: 0, w: 0 };
+      } else {
+        a = c; if (cmdQ.length > 2) cmdQ.splice(0, cmdQ.length - 2);
+      }
+      var va = a.v * (1 + hw.vs), wa = a.w * (1 + hw.ws) + hw.k * a.v;
+      r.x = clamp(r.x + va * Math.cos(r.th) * DT, 2, AW - 2);
+      r.y = clamp(r.y + va * Math.sin(r.th) * DT, 2, AH - 2);
+      r.th = wrap(r.th + wa * DT);
+      if (++trailTick >= 3) { trailTick = 0; trail.push({ x: r.x, y: r.y }); if (trail.length > 1400) trail.shift(); }
+    }
+    function step() { physics(control()); }
 
-    // grids and labels
-    ctx.lineWidth = 1 * dpr; ctx.strokeStyle = line;
-    ctx.fillStyle = muted; ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
-    [8, 10, 12].forEach(function (v) {
-      var y = ya(v);
-      ctx.globalAlpha = 0.7; ctx.setLineDash([3 * dpr, 4 * dpr]);
-      ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(W - padR, y); ctx.stroke();
-      ctx.globalAlpha = 1; ctx.setLineDash([]);
-      ctx.fillText(v + '', padL - 6 * dpr, y);
+    function draw() {
+      var dpr = fit(cv), T = xf(cv, dpr), c = colors();
+      ctx.clearRect(0, 0, cv.width, cv.height);
+      arena(ctx, T, dpr, c);
+      var pathCol = mode === 'fb' ? c.trace : c.accent;
+      ctx.font = (10 * dpr) + 'px "JetBrains Mono", ui-monospace, monospace';
+      // tour points
+      tour.forEach(function (p, i) {
+        ctx.strokeStyle = c.muted; ctx.lineWidth = 1.2 * dpr; ctx.globalAlpha = usingUser ? 0.35 : 0.8;
+        var s = 2.4 * T.s;
+        ctx.strokeRect(T.X(p[0]) - s, T.Y(p[1]) - s, 2 * s, 2 * s);
+        ctx.fillStyle = c.muted; ctx.textAlign = 'left'; ctx.textBaseline = 'bottom';
+        ctx.fillText(String(i + 1), T.X(p[0]) + s + 2 * dpr, T.Y(p[1]) - s);
+        ctx.globalAlpha = 1;
+      });
+      // user queue
+      userQ.forEach(function (p, i) {
+        ctx.fillStyle = c.ink; ctx.beginPath(); ctx.arc(T.X(p[0]), T.Y(p[1]), 2.4 * dpr, 0, 6.283); ctx.fill();
+        ctx.textAlign = 'left'; ctx.textBaseline = 'bottom';
+        ctx.fillText('+' + (i + 1), T.X(p[0]) + 4 * dpr, T.Y(p[1]) - 3 * dpr);
+      });
+      // trail
+      if (trail.length > 1) {
+        ctx.strokeStyle = pathCol; ctx.lineWidth = 2 * dpr; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+        ctx.beginPath(); ctx.moveTo(T.X(trail[0].x), T.Y(trail[0].y));
+        for (var i = 1; i < trail.length; i++) ctx.lineTo(T.X(trail[i].x), T.Y(trail[i].y));
+        ctx.stroke();
+      }
+      // planned line
+      if (target && state !== 'ARRIVED') {
+        ctx.strokeStyle = c.muted; ctx.setLineDash([4 * dpr, 4 * dpr]); ctx.lineWidth = 1 * dpr;
+        var from = mode === 'ol' ? r : r;
+        ctx.beginPath(); ctx.moveTo(T.X(from.x), T.Y(from.y)); ctx.lineTo(T.X(target.x), T.Y(target.y)); ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.strokeStyle = pathCol; ctx.lineWidth = 2 * dpr;
+        ctx.beginPath(); ctx.arc(T.X(target.x), T.Y(target.y), 3.2 * T.s, 0, 6.283); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(T.X(target.x) - 5 * dpr, T.Y(target.y)); ctx.lineTo(T.X(target.x) + 5 * dpr, T.Y(target.y));
+        ctx.moveTo(T.X(target.x), T.Y(target.y) - 5 * dpr); ctx.lineTo(T.X(target.x), T.Y(target.y) + 5 * dpr); ctx.stroke();
+      }
+      // error marks
+      marks.forEach(function (m, i) {
+        var col = m.m === 'fb' ? c.trace : c.accent;
+        ctx.globalAlpha = 0.35 + 0.65 * ((i + 1) / marks.length);
+        ctx.strokeStyle = col; ctx.lineWidth = 1.5 * dpr;
+        ctx.beginPath(); ctx.arc(T.X(m.x), T.Y(m.y), Math.max(m.e * T.s, 3 * dpr), 0, 6.283); ctx.stroke();
+        ctx.fillStyle = col; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+        var ly = T.Y(m.y) + Math.max(m.e * T.s, 2.6 * T.s) + 4 * dpr;
+        if (ly > T.Y(AH) - 14 * dpr) { ctx.textBaseline = 'bottom'; ly = T.Y(m.y) - Math.max(m.e * T.s, 2.6 * T.s) - 4 * dpr; }
+        ctx.fillText(m.e.toFixed(1) + ' cm', T.X(m.x), ly);
+        ctx.globalAlpha = 1;
+      });
+      // robot
+      var X = T.X(r.x), Y = T.Y(r.y), rb = R_BODY * T.s;
+      ctx.save(); ctx.translate(X, Y); ctx.rotate(r.th);
+      ctx.fillStyle = c.ink;
+      ctx.fillRect(-rb * 0.55, -rb - 1.6 * dpr, rb * 1.1, 3 * dpr);
+      ctx.fillRect(-rb * 0.55, rb - 1.4 * dpr, rb * 1.1, 3 * dpr);
+      ctx.fillStyle = c.panel; ctx.strokeStyle = c.ink; ctx.lineWidth = 1.6 * dpr;
+      ctx.beginPath(); ctx.arc(0, 0, rb, 0, 6.283); ctx.fill(); ctx.stroke();
+      ctx.strokeStyle = pathCol; ctx.lineWidth = 2 * dpr;
+      ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(rb * 0.95, 0); ctx.stroke();
+      ctx.restore();
+    }
+
+    var nLast = document.getElementById('n-last'), nAvg = document.getElementById('n-avg'), nState = document.getElementById('n-state');
+    var labels = { IDLE: 'Idle', ROTATE: 'Rotate', DRIVE: 'Drive', SETTLE: 'Stopping', ARRIVED: 'Arrived', OL: 'Timed move' };
+    function ui() {
+      if (errs.length) {
+        var last = errs[errs.length - 1], avg = errs.reduce(function (a, b) { return a + b; }, 0) / errs.length;
+        nLast.textContent = last.toFixed(2) + ' cm'; nLast.className = last < 1 ? 'good' : (last > 3 ? 'bad' : '');
+        nAvg.textContent = avg.toFixed(2) + ' cm'; nAvg.className = avg < 1 ? 'good' : (avg > 3 ? 'bad' : '');
+      } else { nLast.textContent = '–'; nAvg.textContent = '–'; nLast.className = nAvg.className = ''; }
+      nState.textContent = labels[state] || state;
+    }
+
+    function resetRun() {
+      trail = []; errs = []; marks = []; cmdQ = [];
+      belief = { x: r.x, y: r.y, th: r.th };
+      state = 'IDLE'; idleT = 3.6; target = null; rehomeAfter = false;
+      if (!usingUser) tourIdx = 0;
+      // start from home for a fair comparison
+      if (!usingUser) { r = { x: 25, y: 25, th: 0 }; belief = { x: 25, y: 25, th: 0 }; tourIdx = 0; }
+    }
+    var bFb = document.getElementById('m-fb'), bOl = document.getElementById('m-ol');
+    var lagEl = document.getElementById('lag'), predEl = document.getElementById('pred'), predL = document.getElementById('pred-l');
+    function setMode(m) {
+      mode = m; bFb.setAttribute('aria-pressed', m === 'fb'); bOl.setAttribute('aria-pressed', m === 'ol');
+      syncPred(); resetRun();
+    }
+    function syncPred() {
+      var on = lagOn && mode === 'fb';
+      predEl.disabled = !on; predL.classList.toggle('off', !on);
+    }
+    bFb.addEventListener('click', function () { setMode('fb'); });
+    bOl.addEventListener('click', function () { setMode('ol'); });
+    lagEl.addEventListener('change', function () { lagOn = lagEl.checked; cmdQ = []; syncPred(); resetRun(); });
+    predEl.addEventListener('change', function () { predOn = predEl.checked; resetRun(); });
+    cv.addEventListener('click', function (e) {
+      var p = pointer(cv, e);
+      if (p[0] < 0 || p[0] > AW || p[1] < 0 || p[1] > AH) return;
+      if (userQ.length >= 6) return;
+      userQ.push([clamp(p[0], 8, AW - 8), clamp(p[1], 8, AH - 8)]);
+      if (!usingUser && mode === 'ol') { belief = { x: r.x, y: r.y, th: r.th }; }
     });
-    ctx.textAlign = 'left'; ctx.textBaseline = 'top';
-    ctx.fillText('m/s²', padL + 4 * dpr, top1 + 2 * dpr);
-    ctx.fillText('KNN score', padL + 4 * dpr, top2 + 2 * dpr);
-    ctx.strokeStyle = line;
-    ctx.beginPath(); ctx.moveTo(padL, top2 + h2); ctx.lineTo(W - padR, top2 + h2); ctx.stroke();
-    ctx.textAlign = 'center';
-    ctx.fillText('-2 s', padL + 10 * dpr, H - padB + 5 * dpr);
-    ctx.fillText('now', padL + pw - 10 * dpr, H - padB + 5 * dpr);
 
-    // threshold
-    var yt = ys(THRESH);
-    ctx.strokeStyle = ac; ctx.setLineDash([5 * dpr, 4 * dpr]); ctx.lineWidth = 1.2 * dpr;
-    ctx.beginPath(); ctx.moveTo(padL, yt); ctx.lineTo(W - padR, yt); ctx.stroke();
-    ctx.setLineDash([]);
-    ctx.fillStyle = ac; ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
-    ctx.fillText('limit', padL - 6 * dpr, yt);
+    return { step: step, draw: draw, ui: ui, DT: DT };
+  })();
 
-    // accel trace
-    ctx.strokeStyle = tr; ctx.lineWidth = 1.3 * dpr; ctx.lineJoin = 'round';
-    ctx.beginPath();
-    for (i = 0; i < SPAN; i++) {
-      var xx = xs(i, SPAN), yy = ya(acc[(head + i) % SPAN]);
-      if (i === 0) ctx.moveTo(xx, yy); else ctx.lineTo(xx, yy);
+  // ======================= OPTION 2: PARTICLE FILTER =======================
+  var PF = (function () {
+    var cv = document.getElementById('pf'), ctx = cv.getContext('2d');
+    var N = 300, DT = 1 / 60, RANGE = 60, SIG = 2.5, SIG_F = 5, MEAS_EVERY = 0.2, INJECT = 0.02;
+    var LM = [[22, 18], [70, 12], [138, 22], [150, 72], [104, 88], [44, 74], [90, 48]];
+    var rob = { x: 40, y: 55, th: 0.4 }, v = 14, w = 0;
+    var px = new Float32Array(N), py = new Float32Array(N), pth = new Float32Array(N), pw = new Float32Array(N);
+    var measT = 0, obs = [], neff = N, est = { x: 0, y: 0 }, kidnapT = 0;
+    var ex = 0, ey = 0;
+
+    function scatter() {
+      for (var i = 0; i < N; i++) { px[i] = Math.random() * AW; py[i] = Math.random() * AH; pth[i] = Math.random() * 6.283; pw[i] = 1 / N; }
+      neff = N;
     }
-    ctx.stroke();
-
-    // score trace, colored where flagged
-    ctx.lineWidth = 2 * dpr;
-    for (i = 1; i < DSPAN; i++) {
-      var a = (dhead + i - 1) % DSPAN, b = (dhead + i) % DSPAN;
-      ctx.strokeStyle = flag[b] ? ac : tr;
-      ctx.beginPath();
-      ctx.moveTo(xs(i - 1, DSPAN), ys(sc[a]));
-      ctx.lineTo(xs(i, DSPAN), ys(sc[b]));
-      ctx.stroke();
+    function estimate() {
+      var sx = 0, sy = 0, sw = 0;
+      for (var i = 0; i < N; i++) { sx += px[i] * pw[i]; sy += py[i] * pw[i]; sw += pw[i]; }
+      est = { x: sx / sw, y: sy / sw };
     }
-    var lastIdx = (dhead + DSPAN - 1) % DSPAN;
-    ctx.fillStyle = flag[lastIdx] ? ac : tr;
-    ctx.beginPath(); ctx.arc(padL + pw, ys(sc[lastIdx]), 3.2 * dpr, 0, Math.PI * 2); ctx.fill();
+    function resample() {
+      var nx = new Float32Array(N), ny = new Float32Array(N), nt = new Float32Array(N);
+      var keep = Math.round(N * (1 - INJECT)), step = 1 / keep, u = Math.random() * step, c = pw[0], i = 0;
+      for (var m = 0; m < keep; m++) {
+        var U = u + m * step;
+        while (U > c && i < N - 1) { i++; c += pw[i]; }
+        nx[m] = px[i] + gauss() * 0.6; ny[m] = py[i] + gauss() * 0.6; nt[m] = pth[i] + gauss() * 0.04;
+      }
+      for (m = keep; m < N; m++) { nx[m] = Math.random() * AW; ny[m] = Math.random() * AH; nt[m] = Math.random() * 6.283; }
+      px.set(nx); py.set(ny); pth.set(nt);
+      for (m = 0; m < N; m++) pw[m] = 1 / N;
+    }
+    function measure() {
+      obs = [];
+      for (var j = 0; j < LM.length; j++) {
+        var d = Math.hypot(LM[j][0] - rob.x, LM[j][1] - rob.y);
+        if (d <= RANGE) obs.push({ j: j, z: d + gauss() * SIG });
+      }
+      if (!obs.length) return;
+      var lw = new Float32Array(N), mx = -Infinity, i, k;
+      for (i = 0; i < N; i++) {
+        var s = 0;
+        for (k = 0; k < obs.length; k++) {
+          var L = LM[obs[k].j], dh = Math.hypot(L[0] - px[i], L[1] - py[i]), r = obs[k].z - dh;
+          s -= (r * r) / (2 * SIG_F * SIG_F);
+          if (dh > RANGE + 8) s -= 4;
+        }
+        // landmarks the particle expects to see but the robot does not
+        for (k = 0; k < LM.length; k++) {
+          var seen = false;
+          for (var q = 0; q < obs.length; q++) if (obs[q].j === k) { seen = true; break; }
+          if (!seen && Math.hypot(LM[k][0] - px[i], LM[k][1] - py[i]) < RANGE - 8) s -= 3;
+        }
+        lw[i] = s + Math.log(pw[i] + 1e-12);
+        if (lw[i] > mx) mx = lw[i];
+      }
+      var sum = 0;
+      for (i = 0; i < N; i++) { pw[i] = Math.exp(lw[i] - mx); sum += pw[i]; }
+      var sq = 0;
+      for (i = 0; i < N; i++) { pw[i] /= sum; sq += pw[i] * pw[i]; }
+      neff = 1 / sq;
+      estimate();
+      if (neff < N * 0.5) resample();
+    }
+    function step() {
+      // robot wanders and steers away from walls
+      var m = 18;
+      if (rob.x < m || rob.x > AW - m || rob.y < m || rob.y > AH - m) {
+        w = clamp(2.5 * wrap(Math.atan2(AH / 2 - rob.y, AW / 2 - rob.x) - rob.th), -1.6, 1.6);
+      } else {
+        w = clamp(0.97 * w + gauss() * 0.12, -1.2, 1.2);
+      }
+      rob.x = clamp(rob.x + (v + gauss() * 0.8) * Math.cos(rob.th) * DT, 1, AW - 1);
+      rob.y = clamp(rob.y + (v + gauss() * 0.8) * Math.sin(rob.th) * DT, 1, AH - 1);
+      rob.th = wrap(rob.th + (w + gauss() * 0.05) * DT);
+      for (var i = 0; i < N; i++) {
+        var vi = v + gauss() * 2, wi = w + gauss() * 0.25;
+        px[i] = clamp(px[i] + vi * Math.cos(pth[i]) * DT, 0, AW);
+        py[i] = clamp(py[i] + vi * Math.sin(pth[i]) * DT, 0, AH);
+        pth[i] += wi * DT;
+      }
+      measT += DT;
+      if (measT >= MEAS_EVERY) { measT = 0; measure(); }
+      estimate();
+      if (!reduce) { kidnapT += DT; if (kidnapT > 22) kidnap(); }
+    }
+    function kidnap(to) {
+      kidnapT = 0;
+      if (to) { rob.x = to[0]; rob.y = to[1]; }
+      else {
+        var nx, ny, tries = 0;
+        do { nx = 15 + Math.random() * (AW - 30); ny = 15 + Math.random() * (AH - 30); tries++; }
+        while (Math.hypot(nx - rob.x, ny - rob.y) < 55 && tries < 30);
+        rob.x = nx; rob.y = ny;
+      }
+      rob.th = Math.random() * 6.283;
+    }
+
+    function draw() {
+      var dpr = fit(cv), T = xf(cv, dpr), c = colors();
+      ctx.clearRect(0, 0, cv.width, cv.height);
+      arena(ctx, T, dpr, c);
+      ctx.save(); ctx.beginPath(); ctx.rect(T.X(0), T.Y(0), AW * T.s, AH * T.s); ctx.clip();
+      // sensor range
+      ctx.strokeStyle = c.muted; ctx.setLineDash([3 * dpr, 5 * dpr]); ctx.lineWidth = 1 * dpr; ctx.globalAlpha = 0.6;
+      ctx.beginPath(); ctx.arc(T.X(rob.x), T.Y(rob.y), RANGE * T.s, 0, 6.283); ctx.stroke();
+      ctx.globalAlpha = 1;
+      // observation lines
+      ctx.strokeStyle = c.muted; ctx.setLineDash([2 * dpr, 3 * dpr]);
+      obs.forEach(function (o) { var L = LM[o.j]; ctx.beginPath(); ctx.moveTo(T.X(rob.x), T.Y(rob.y)); ctx.lineTo(T.X(L[0]), T.Y(L[1])); ctx.stroke(); });
+      ctx.setLineDash([]);
+      // particles
+      ctx.fillStyle = c.trace;
+      var maxw = 0; for (var i = 0; i < N; i++) if (pw[i] > maxw) maxw = pw[i];
+      for (i = 0; i < N; i++) {
+        ctx.globalAlpha = 0.25 + 0.65 * Math.min(1, pw[i] / (maxw || 1));
+        ctx.beginPath(); ctx.arc(T.X(px[i]), T.Y(py[i]), 1.7 * dpr, 0, 6.283); ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+      // landmarks
+      LM.forEach(function (L, j) {
+        var X = T.X(L[0]), Y = T.Y(L[1]), s = 5 * dpr;
+        var seen = obs.some(function (o) { return o.j === j; });
+        ctx.fillStyle = seen ? c.ink : c.panel; ctx.strokeStyle = c.ink; ctx.lineWidth = 1.5 * dpr;
+        ctx.beginPath(); ctx.moveTo(X, Y - s); ctx.lineTo(X + s, Y); ctx.lineTo(X, Y + s); ctx.lineTo(X - s, Y); ctx.closePath(); ctx.fill(); ctx.stroke();
+      });
+      // estimate
+      ex += (est.x - ex) * 0.3; ey += (est.y - ey) * 0.3;
+      ctx.strokeStyle = c.accent; ctx.lineWidth = 2 * dpr;
+      ctx.beginPath(); ctx.arc(T.X(ex), T.Y(ey), 6 * dpr, 0, 6.283); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(T.X(ex) - 9 * dpr, T.Y(ey)); ctx.lineTo(T.X(ex) + 9 * dpr, T.Y(ey));
+      ctx.moveTo(T.X(ex), T.Y(ey) - 9 * dpr); ctx.lineTo(T.X(ex), T.Y(ey) + 9 * dpr); ctx.stroke();
+      // robot
+      var X = T.X(rob.x), Y = T.Y(rob.y), rb = 4 * T.s;
+      ctx.save(); ctx.translate(X, Y); ctx.rotate(rob.th);
+      ctx.fillStyle = c.ink; ctx.beginPath(); ctx.arc(0, 0, rb, 0, 6.283); ctx.fill();
+      ctx.strokeStyle = c.panel; ctx.lineWidth = 2 * dpr; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(rb * 0.9, 0); ctx.stroke();
+      ctx.restore();
+      ctx.restore();
+    }
+
+    var pErr = document.getElementById('p-err'), pNeff = document.getElementById('p-neff'), pLm = document.getElementById('p-lm');
+    function ui() {
+      var e = Math.hypot(est.x - rob.x, est.y - rob.y);
+      pErr.textContent = e.toFixed(1) + ' cm'; pErr.className = e < 5 ? 'good' : (e > 20 ? 'bad' : '');
+      pNeff.textContent = Math.round(neff) + ' / ' + N;
+      pLm.textContent = String(obs.length);
+    }
+
+    document.getElementById('kidnap').addEventListener('click', function () { kidnap(); });
+    document.getElementById('scatter').addEventListener('click', function () { scatter(); estimate(); });
+    cv.addEventListener('click', function (e) {
+      var p = pointer(cv, e);
+      if (p[0] < 0 || p[0] > AW || p[1] < 0 || p[1] > AH) return;
+      kidnap([clamp(p[0], 5, AW - 5), clamp(p[1], 5, AH - 5)]);
+    });
+
+    scatter(); estimate(); ex = est.x; ey = est.y;
+    return { step: step, draw: draw, ui: ui, DT: DT };
+  })();
+
+  // ======================= TABS AND LOOP =======================
+  var active = 'pf';
+  var tabs = [document.getElementById('tab-nav'), document.getElementById('tab-pf')];
+  var panels = { nav: document.getElementById('demo-nav'), pf: document.getElementById('demo-pf') };
+  var last = null, acc = 0, lastUi = 0;
+  function select(which, focus) {
+    active = which;
+    tabs.forEach(function (t) {
+      var on = t.id === 'tab-' + which;
+      t.setAttribute('aria-selected', on ? 'true' : 'false');
+      t.tabIndex = on ? 0 : -1;
+      if (on && focus) t.focus();
+    });
+    panels.nav.hidden = which !== 'nav';
+    panels.pf.hidden = which !== 'pf';
+    last = null; acc = 0;
+    var D = which === 'nav' ? NAV : PF;
+    D.draw(); D.ui();
   }
-
-  var lastT = null, accum = 0, lastUi = 0, autoTimer = 2.5;
+  tabs.forEach(function (t, i) {
+    t.addEventListener('click', function () { select(i === 0 ? 'nav' : 'pf'); });
+    t.addEventListener('keydown', function (e) {
+      if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { e.preventDefault(); select(active === 'nav' ? 'pf' : 'nav', true); }
+    });
+  });
   function frame(t) {
-    if (lastT === null) lastT = t;
-    var dt = Math.min(0.1, (t - lastT) / 1000); lastT = t;
-    accum += dt;
-    var steps = Math.floor(accum * FS);
-    accum -= steps / FS;
-    for (var i = 0; i < steps; i++) step();
-    if (!reduce) {
-      autoTimer -= dt;
-      if (autoTimer <= 0) { inject(); autoTimer = 6 + Math.random() * 3; }
-    }
-    draw();
-    if (t - lastUi > 120) {
-      lastUi = t;
-      rAcc.textContent = lastAcc.toFixed(2);
-      rScore.textContent = lastScore.toFixed(1) + ' / ' + THRESH.toFixed(1);
-      rState.textContent = alert ? 'Anomaly' : 'Nominal';
-      rState.className = alert ? 'alert' : '';
-    }
+    var D = active === 'nav' ? NAV : PF;
+    if (last === null) last = t;
+    var dt = Math.min(0.1, (t - last) / 1000); last = t;
+    acc += dt;
+    while (acc >= D.DT) { D.step(); acc -= D.DT; }
+    D.draw();
+    if (t - lastUi > 150) { lastUi = t; D.ui(); }
     requestAnimationFrame(frame);
   }
-
-  for (var s = 0; s < WIN; s++) fx.push(gen.sample().a);
-  for (var p = 0; p < SPAN; p++) step();
-  elapsed = 0;
-  draw();
+  PF.draw(); PF.ui(); NAV.ui();
   requestAnimationFrame(frame);
 
-  strengthIn.addEventListener('input', function () { strengthOut.textContent = strengthIn.value; });
-  document.getElementById('inject').addEventListener('click', function () { inject(); autoTimer = 7; });
-  document.getElementById('clear').addEventListener('click', function () {
-    gcs.querySelectorAll('li:not(.gcs-h)').forEach(function (li) { li.remove(); });
-  });
-
-  // ---------- Copy email ----------
+  // ======================= COPY EMAIL =======================
   var copyBtn = document.getElementById('copy-email');
   copyBtn.addEventListener('click', function () {
     var el = document.getElementById('email-v'), text = el.textContent.trim();
