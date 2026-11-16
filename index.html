@@ -4,9 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Tyler McGrath</title>
-<meta name="description" content="Tyler McGrath, embedded software engineer: C/C++, CAN, real-time systems, and robotics. Based in New York City.">
+<meta name="description" content="Tyler McGrath, embedded software engineer: C/C++, Machine Learning, and robotics. Based in New York City.">
 <meta property="og:title" content="Tyler McGrath · Embedded Software Engineer">
-<meta property="og:description" content="C/C++, CAN, real-time systems, and robotics. Onboard anomaly detection for flight firmware, autonomous robot navigation, and five years of automotive embedded work. Try the live robot navigation and localization demos.">
+<meta property="og:description" content="C/C++, Machine Learning, and robotics. Five years of automotive embedded work. Try the live robot navigation and localization demos.">
 <meta property="og:type" content="website">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -312,9 +312,9 @@ footer .rule { border-top: 1px solid var(--line); padding-top: 18px; width: 100%
         <span class="status"><span class="led"></span>Open to embedded and robotics roles · New York City</span>
         <p class="role">Embedded software engineer · C/C++ · PYTHON · CAN · robotics</p>
         <h1>Embedded software for <span class="hl">machines that move.</span></h1>
-        <p class="intro">I write code that runs close to the hardware: CAN tooling for automotive electronics, a sensor-driver classifier inside drone flight firmware, and control code for physical robots. I spent five years at Continental and I'm finishing an MS in Computer Science at Georgia Tech in December 2026.</p>
+        <p class="intro">I write code that runs close to the hardware, control code for physical robots, and machine learning classifiers. I spent five years at Continental and I'm finishing an MS in Computer Science at Georgia Tech in December 2026.</p>
         <div class="metrics">
-          <div><b>400 Hz</b><span>onboard IMU anomaly detection in ArduPilot</span></div>
+          <div><b>400 Hz</b><span>IMU anomaly detection in ArduPilot SITL</span></div>
           <div><b>0.74 cm</b><span>final navigation error on physical robots</span></div>
           <div><b>4d → 1d</b><span>test time per software release, after automation</span></div>
         </div>
@@ -379,12 +379,11 @@ footer .rule { border-top: 1px solid var(--line); padding-top: 18px; width: 100%
       <div class="builds">
         <article class="panel build lead">
           <div class="build-meta"><span class="state"><span class="led"></span>Complete</span><span>C++ · Python · ArduPilot · SITL</span></div>
-          <h3>Onboard IMU anomaly detector for UAV flight firmware</h3>
+          <h3>IMU anomaly detector for ArduPilot</h3>
           <div class="lead-grid">
             <div style="display:grid;gap:16px;align-content:start;min-width:0">
-              <p>A KNN anomaly detector built into ArduPilot's inertial sensor driver. It classifies accelerometer data in real time on the flight controller and alerts the ground station when vibration looks wrong.</p>
-              <ul class="spec">
-                <li><span>Runs in</span><span>ArduPilot's inertial sensor driver, at the 400 Hz sensor rate</span></li>
+              <p>A KNN anomaly detector built into ArduPilot's inertial sensor driver and tested in its software-in-the-loop (SITL) simulator. It classifies accelerometer data in real time and alerts the ground station over MAVLink when vibration looks wrong.</p>              <ul class="spec">
+                <li><span>Runs in</span><span>ArduPilot's inertial sensor driver, at the 400 Hz sensor rate, tested in SITL</span></li>
                 <li><span>Model</span><span>A 422-point reference model embedded in firmware, built from flight logs by a Python pipeline</span></li>
                 <li><span>Timing</span><span>Partial selection instead of a full sort, to fit inside the flight-control loop's time budget</span></li>
                 <li><span>Alerting</span><span>Warnings sent to the ground station over MAVLink</span></li>
@@ -393,8 +392,8 @@ footer .rule { border-top: 1px solid var(--line); padding-top: 18px; width: 100%
             </div>
             <div class="results" role="table" aria-label="Detector results">
               <div class="results-row h" role="row"><span role="columnheader">Measure</span><span role="columnheader">Result</span></div>
-              <div class="results-row" role="row"><span role="cell">Classification rate on the flight controller</span><span class="num" role="cell">400 Hz</span></div>
-              <div class="results-row" role="row"><span role="cell">Normal readings kept under threshold (held-out data)</span><span class="num" role="cell">99%</span></div>
+              <div class="results-row" role="row"><span role="cell">Classification rate</span><span class="num" role="cell">400 Hz</span></div>
+              <div class="results-row" role="row"><span role="cell">Normal readings kept under threshold</span><span class="num" role="cell">99%</span></div>
               <div class="results-row" role="row"><span role="cell">Injected vibration fault samples flagged</span><span class="num" role="cell">54–80%</span></div>
               <div class="results-row" role="row"><span role="cell">Reference points embedded in firmware</span><span class="num" role="cell">422</span></div>
             </div>
